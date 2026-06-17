@@ -1,0 +1,449 @@
+  <!DOCTYPE html>
+  <html lang="id">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi HPP Produk</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  </head>
+  <body>
+
+  <!-- ======================================================
+       HEADER
+  ====================================================== -->
+  <header>
+    <span>🧮</span>
+    <div>
+      <h1>Aplikasi HPP Produk</h1>
+      <small>Hitung Harga Pokok Produksi dengan mudah</small>
+    </div>
+  </header>
+
+  <!-- ======================================================
+       TAB NAVIGATION
+  ====================================================== -->
+  <div class="tab-container">
+    <button class="tab-btn active" onclick="showTab('tab-bahan', this)">🥦 Input Bahan Baku</button>
+    <button class="tab-btn" onclick="showTab('tab-hpp', this)">📝 Input HPP</button>
+    <button class="tab-btn" onclick="showTab('tab-data-hpp', this)">📊 Data HPP</button>
+    <button class="tab-btn" onclick="showTab('tab-list-bahan', this)">📦 List Bahan Baku</button>
+    <button class="tab-btn" onclick="showTab('tab-list-resep', this)">📋 List Resep Menu</button>
+  </div>
+
+  <!-- ======================================================
+       MAIN CONTENT
+  ====================================================== -->
+  <div class="content">
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 1 — INPUT BAHAN BAKU
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-bahan" class="tab-panel active">
+
+      <!-- Form Input Manual -->
+      <div class="card">
+        <h2>🥦 Input Bahan Baku Manual</h2>
+        <div id="alert-bahan" class="alert"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nama Bahan Baku *</label>
+            <input type="text" id="bahan-nama" placeholder="cth: Susu UHT, Kopi Arabica">
+          </div>
+          <div class="form-group">
+            <label>Kategori</label>
+            <select id="bahan-kategori">
+              <option value="">-- Pilih Kategori --</option>
+              <option>Bahan Utama</option>
+              <option>Bumbu</option>
+              <option>Sayuran</option>
+              <option>Protein</option>
+              <option>Minuman</option>
+              <option>Kemasan</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Informasi Pembelian -->
+        <div class="card-sub">
+          <h3>📦 Informasi Pembelian</h3>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>Satuan Beli *</label>
+              <select id="bahan-satuan-beli">
+                <option value="">-- Pilih --</option>
+                <optgroup label="Berat">
+                  <option>kg</option>
+                  <option>gram</option>
+                  <option>ons</option>
+                </optgroup>
+                <optgroup label="Volume">
+                  <option>liter</option>
+                  <option>ml</option>
+                </optgroup>
+                <optgroup label="Satuan">
+                  <option>pcs</option>
+                  <option>butir</option>
+                  <option>buah</option>
+                  <option>ikat</option>
+                  <option>porsi</option>
+                  <option>pack</option>
+                  <option>botol</option>
+                  <option>kaleng</option>
+                </optgroup>
+              </select>
+              <div class="hint">Satuan saat kamu beli</div>
+            </div>
+            <div class="form-group">
+              <label>Jumlah Beli *</label>
+              <input type="number" id="bahan-jumlah-beli"
+                placeholder="cth: 1" min="0" step="0.01"
+                oninput="hitungHargaSatuan()">
+              <div class="hint">Berapa banyak yang dibeli</div>
+            </div>
+            <div class="form-group">
+              <label>Total Harga Beli (Rp) *</label>
+              <input type="number" id="bahan-harga-beli"
+                placeholder="cth: 200000" min="0"
+                oninput="hitungHargaSatuan()">
+              <div class="hint">Total harga yang dibayar</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Satuan Pakai & Konversi -->
+        <div class="card-sub">
+          <h3>🔄 Satuan Pakai &amp; Konversi</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Satuan Pakai *</label>
+              <select id="bahan-satuan-pakai" onchange="hitungHargaSatuan()">
+                <option value="">-- Pilih --</option>
+                <optgroup label="Berat">
+                  <option>kg</option>
+                  <option>gram</option>
+                  <option>ons</option>
+                </optgroup>
+                <optgroup label="Volume">
+                  <option>liter</option>
+                  <option>ml</option>
+                </optgroup>
+                <optgroup label="Satuan">
+                  <option>pcs</option>
+                  <option>butir</option>
+                  <option>buah</option>
+                  <option>ikat</option>
+                  <option>porsi</option>
+                  <option>pack</option>
+                  <option>botol</option>
+                  <option>kaleng</option>
+                </optgroup>
+              </select>
+              <div class="hint">Satuan saat dipakai di resep</div>
+            </div>
+            <div class="form-group">
+              <label>Nilai Konversi *</label>
+              <input type="number" id="bahan-konversi"
+                placeholder="cth: 1000" min="0" step="0.01"
+                oninput="hitungHargaSatuan()">
+              <div class="hint">1 [satuan beli] = ? [satuan pakai]</div>
+            </div>
+          </div>
+
+          <!-- Info konversi otomatis -->
+          <div class="konversi-info" id="konversi-info" style="display:none">
+            <strong>💡 Konversi:</strong>
+            <span id="konversi-contoh"></span>
+          </div>
+
+          <!-- Hasil kalkulasi harga per satuan pakai -->
+          <div id="hasil-konversi" class="hasil-konversi" style="display:none">
+            <div class="hk-row">
+              <span>💰 Harga per <strong id="kv-satuan-beli">-</strong></span>
+              <strong id="kv-harga-per-beli">Rp 0</strong>
+            </div>
+            <div class="hk-row">
+              <span>🧪 Harga per <strong id="kv-satuan-pakai">-</strong></span>
+              <strong id="kv-harga-per-pakai" style="color:#27ae60;font-size:1.05rem">Rp 0</strong>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="simpanBahan()">💾 Simpan Bahan Baku</button>
+      </div>
+
+      <!-- Import Excel -->
+      <div class="card">
+        <h2>📥 Import Bahan Baku dari Excel</h2>
+        <div id="alert-import" class="alert"></div>
+
+        <!-- Step 1: Download Template -->
+        <div class="card-sub">
+          <h3><span class="step-badge">1</span>Download Template Excel</h3>
+          <p class="step-desc">
+            Download template terlebih dahulu, isi data bahan baku sesuai format, lalu upload kembali.
+          </p>
+          <button class="btn btn-info" onclick="downloadTemplate()">⬇️ Download Template Excel</button>
+          <div class="template-hint">
+            <strong>Kolom dalam template:</strong>
+            Nama Bahan | Kategori | Satuan Beli | Jumlah Beli | Total Harga Beli | Satuan Pakai | Nilai Konversi
+          </div>
+        </div>
+
+        <!-- Step 2: Upload File -->
+        <div class="card-sub">
+          <h3><span class="step-badge">2</span>Upload File Excel</h3>
+          <div class="import-zone" id="import-zone"
+            onclick="document.getElementById('file-excel').click()"
+            ondragover="event.preventDefault(); this.classList.add('dragover')"
+            ondragleave="this.classList.remove('dragover')"
+            ondrop="handleDrop(event)">
+            <div class="import-icon">📂</div>
+            <p><strong>Klik untuk pilih file</strong> atau drag &amp; drop di sini</p>
+            <p class="import-sub">Format: .xlsx atau .xls</p>
+          </div>
+          <input type="file" id="file-excel" accept=".xlsx,.xls"
+            style="display:none" onchange="handleFileUpload(event)">
+        </div>
+
+        <!-- Step 3 & 4: Preview + Mode (muncul setelah file dipilih) -->
+        <div id="import-preview-section" style="display:none">
+
+          <!-- Preview Tabel -->
+          <div class="card-sub">
+            <h3><span class="step-badge">3</span>Preview Data</h3>
+            <div id="import-summary"></div>
+            <div class="preview-table table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nama Bahan</th>
+                    <th>Kategori</th>
+                    <th>Satuan Beli</th>
+                    <th>Jml Beli</th>
+                    <th>Harga Beli</th>
+                    <th>Satuan Pakai</th>
+                    <th>Konversi</th>
+                    <th>Harga/Satuan Pakai</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-preview"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pilih Mode Import -->
+          <div class="card-sub">
+            <h3><span class="step-badge">4</span>Pilih Mode Import</h3>
+            <div class="import-option">
+              <label>
+                <input type="radio" name="import-mode" value="modify" checked
+                  onchange="toggleReplaceWarning(this.value)">
+                <span>➕ <strong>Modify</strong> — Tambahkan ke data yang ada</span>
+              </label>
+              <label>
+                <input type="radio" name="import-mode" value="replace"
+                  onchange="toggleReplaceWarning(this.value)">
+                <span>🔄 <strong>Replace</strong> — Ganti semua data bahan baku</span>
+              </label>
+            </div>
+            <div id="replace-warning" class="replace-warning" style="display:none">
+              ⚠️ Mode <strong>Replace</strong> akan menghapus <strong>seluruh data bahan baku</strong>
+              yang ada dan menggantinya dengan data baru!
+            </div>
+            <div class="import-actions">
+              <button class="btn btn-success" onclick="prosesImport()">✅ Import Sekarang</button>
+              <button class="btn btn-grey" onclick="batalImport()">❌ Batal</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 2 — INPUT HPP
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-hpp" class="tab-panel">
+      <div class="card">
+        <h2>📝 Input HPP Menu</h2>
+        <div id="alert-hpp" class="alert"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nama Menu *</label>
+            <input type="text" id="hpp-nama" placeholder="cth: Nasi Goreng Spesial">
+          </div>
+          <div class="form-group">
+            <label>Kategori Menu</label>
+            <select id="hpp-kategori">
+              <option value="">-- Pilih Kategori --</option>
+              <option>Makanan</option>
+              <option>Minuman</option>
+              <option>Snack</option>
+              <option>Dessert</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>📋 Resep / Bahan yang Digunakan</label>
+          <div id="resep-container"></div>
+          <button class="btn-add" onclick="tambahResepItem()">+ Tambah Bahan</button>
+        </div>
+
+        <!-- Preview breakdown bahan -->
+        <div id="hpp-preview" class="hpp-detail" style="display:none">
+          <strong>💰 Rincian Bahan</strong>
+          <div id="hpp-breakdown"></div>
+        </div>
+
+        <div class="form-row" style="margin-top:16px">
+          <div class="form-group">
+            <label>Biaya Overhead (Rp)</label>
+            <input type="number" id="hpp-overhead"
+              placeholder="cth: 2000" min="0" oninput="hitungHPP()">
+          </div>
+          <div class="form-group">
+            <label>Harga Jual (Rp) *</label>
+            <input type="number" id="hpp-harga-jual"
+              placeholder="cth: 25000" min="0" oninput="hitungHPP()">
+          </div>
+        </div>
+
+        <!-- Summary margin -->
+        <div id="margin-info" class="hpp-detail" style="display:none">
+          <div class="hpp-row"><span>Total HPP Bahan</span><span id="info-hpp-bahan">Rp 0</span></div>
+          <div class="hpp-row"><span>Overhead</span><span id="info-overhead">Rp 0</span></div>
+          <div class="hpp-row"><span>Total HPP</span><span id="info-hpp-total">Rp 0</span></div>
+          <div class="hpp-row"><span>Harga Jual</span><span id="info-harga-jual">Rp 0</span></div>
+          <div class="hpp-row"><span>Margin / Profit</span><span id="info-margin">Rp 0 (0%)</span></div>
+        </div>
+
+        <button class="btn btn-success" style="margin-top:16px" onclick="simpanHPP()">
+          💾 Simpan HPP Menu
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 3 — DATA HPP
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-data-hpp" class="tab-panel">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-menu">0</div>
+          <div class="stat-label">Total Menu</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-num" id="stat-avg-margin">0%</div>
+          <div class="stat-label">Rata-rata Margin</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-num" id="stat-avg-hpp">Rp0</div>
+          <div class="stat-label">Rata-rata HPP</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📊 Data HPP Menu</h2>
+        <div class="search-box">
+          <input type="text" id="search-hpp"
+            placeholder="🔍 Cari nama menu..." oninput="renderDataHPP()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Menu</th>
+                <th>Kategori</th>
+                <th>HPP Bahan</th>
+                <th>Overhead</th>
+                <th>Total HPP</th>
+                <th>Harga Jual</th>
+                <th>Margin</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-hpp"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 4 — LIST BAHAN BAKU
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-list-bahan" class="tab-panel">
+      <div class="card">
+        <h2>📦 List Bahan Baku</h2>
+        <div class="search-box">
+          <input type="text" id="search-bahan"
+            placeholder="🔍 Cari nama bahan..." oninput="renderListBahan()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Bahan</th>
+                <th>Kategori</th>
+                <th>Satuan Beli</th>
+                <th>Harga Beli</th>
+                <th>Satuan Pakai</th>
+                <th>Konversi</th>
+                <th>Harga / Satuan Pakai</th>
+                <th>Tgl Input</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-bahan"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════
+         TAB 5 — LIST RESEP MENU
+    ════════════════════════════════════════════════════ -->
+    <div id="tab-list-resep" class="tab-panel">
+      <div class="card">
+        <h2>📋 List Resep Menu</h2>
+        <div class="search-box">
+          <input type="text" id="search-resep"
+            placeholder="🔍 Cari nama menu..." oninput="renderListResep()">
+        </div>
+        <div id="resep-list-container"></div>
+      </div>
+    </div>
+
+  </div><!-- end .content -->
+
+  <!-- ======================================================
+       MODAL KONFIRMASI HAPUS
+  ====================================================== -->
+  <div class="modal-overlay" id="modal-hapus">
+    <div class="modal">
+      <h3>⚠️ Konfirmasi Hapus</h3>
+      <p id="modal-msg">Apakah Anda yakin ingin menghapus data ini?</p>
+      <div class="modal-actions">
+        <button class="btn btn-grey" onclick="tutupModal()">Batal</button>
+        <button class="btn btn-danger" onclick="konfirmasiHapus()">🗑 Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       LOAD JAVASCRIPT (urutan penting!)
+  ====================================================== -->
+  <script src="js/db.js"></script>
+  <script src="js/bahan.js"></script>
+  <script src="js/hpp.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+
+  </body>
+  </html>
