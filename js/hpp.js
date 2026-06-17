@@ -54,8 +54,6 @@
 
   /**
    * Update nilai field tertentu pada satu baris resep.
-   * Dipanggil oleh onchange di setiap select/input baris resep.
-   *
    * @param {string} id    - id baris resep
    * @param {string} field - 'bahanId' | 'jumlah'
    * @param {*}      val   - nilai baru
@@ -66,15 +64,12 @@
 
     item[field] = val;
 
-    // Re-render agar info harga per satuan terupdate
     _renderResepItems();
     hitungHPP();
   }
 
   /**
    * Hapus satu baris resep berdasarkan id.
-   * Dipanggil saat user klik tombol "✕" di baris resep.
-   *
    * @param {string} id - id baris resep
    */
   function hapusResepItem(id) {
@@ -104,24 +99,17 @@
     }
 
     container.innerHTML = resepItems.map(item => {
-      // Cari data bahan yang dipilih
       const bahan      = semuaBahan.find(b => b.id === item.bahanId);
       const satuanTeks = bahan ? bahan.satuanPakai : '';
-
-      // Info harga per satuan pakai
       const infoHarga  = bahan
         ? `💡 Harga: ${rupiah(roundTo(bahan.hargaPerPakai, 2))} / ${bahan.satuanPakai}`
         : '';
-
-      // Hitung subtotal baris ini
       const subtotal   = (bahan && item.jumlah > 0)
         ? rupiah(roundTo(bahan.hargaPerPakai * item.jumlah, 0))
         : '';
 
       return `
         <div class="resep-item">
-
-          <!-- Dropdown pilih bahan -->
           <select onchange="updateResep('${item.id}', 'bahanId', this.value)">
             <option value="">-- Pilih Bahan --</option>
             ${semuaBahan.map(b => `
@@ -131,7 +119,6 @@
             `).join('')}
           </select>
 
-          <!-- Input jumlah -->
           <input
             type="number"
             placeholder="Jumlah"
@@ -141,7 +128,6 @@
             onchange="updateResep('${item.id}', 'jumlah', parseFloat(this.value) || 0)"
           >
 
-          <!-- Label satuan pakai -->
           <span style="
             font-size:0.82rem; color:#2d6a9f;
             font-weight:600; align-self:center;
@@ -149,7 +135,6 @@
             ${satuanTeks}
           </span>
 
-          <!-- Tombol hapus baris -->
           <button
             class="btn btn-danger btn-sm"
             onclick="hapusResepItem('${item.id}')"
@@ -157,7 +142,6 @@
             ✕
           </button>
 
-          <!-- Info harga & subtotal (full width) -->
           ${(infoHarga || subtotal) ? `
             <div class="resep-item-info">
               ${infoHarga}
@@ -165,7 +149,6 @@
               ${subtotal ? `Subtotal: <strong>${subtotal}</strong>` : ''}
             </div>
           ` : ''}
-
         </div>`;
     }).join('');
   }
@@ -176,18 +159,13 @@
 
   /**
    * Hitung total HPP dari resep yang sedang diinput.
-   * Dipanggil setiap kali ada perubahan bahan, jumlah,
-   * overhead, atau harga jual.
-   *
-   * @returns {Object} hasil kalkulasi:
-   *   { totalBahan, totalHPP, margin, marginPct, breakdown }
+   * @returns {Object} { totalBahan, totalHPP, margin, marginPct, hppPct, breakdown }
    */
   function hitungHPP() {
     const semuaBahan = DB.getBahan();
     let   totalBahan = 0;
     const breakdown  = [];
 
-    // -- Hitung subtotal tiap bahan --
     resepItems.forEach(item => {
       if (!item.bahanId || item.jumlah <= 0) return;
 
@@ -214,13 +192,15 @@
       ? roundTo((margin / hargaJual) * 100, 1)
       : 0;
 
-    // -- Update tampilan breakdown bahan --
+    // ✅ BARU: Hitung % HPP = (Total HPP / Harga Jual) × 100
+    const hppPct = hargaJual > 0
+      ? roundTo((totalHPP / hargaJual) * 100, 1)
+      : 0;
+
     _updateBreakdownUI(breakdown, totalBahan);
+    _updateMarginUI(totalBahan, overhead, totalHPP, hargaJual, margin, marginPct, hppPct);
 
-    // -- Update tampilan summary margin --
-    _updateMarginUI(totalBahan, overhead, totalHPP, hargaJual, margin, marginPct);
-
-    return { totalBahan, totalHPP, margin, marginPct, breakdown };
+    return { totalBahan, totalHPP, margin, marginPct, hppPct, breakdown };
   }
 
   /**
@@ -255,10 +235,10 @@
   }
 
   /**
-   * Update UI summary margin & profit
+   * Update UI summary margin & profit + % HPP indicator
    * @private
    */
-  function _updateMarginUI(totalBahan, overhead, totalHPP, hargaJual, margin, marginPct) {
+  function _updateMarginUI(totalBahan, overhead, totalHPP, hargaJual, margin, marginPct, hppPct) {
     const elMargin = document.getElementById('margin-info');
 
     if (hargaJual <= 0 && overhead <= 0) {
@@ -273,11 +253,11 @@
     document.getElementById('info-hpp-total').textContent  = rupiah(roundTo(totalHPP, 0));
     document.getElementById('info-harga-jual').textContent = rupiah(hargaJual);
 
-    const elMarginVal      = document.getElementById('info-margin');
+    // -- Update Margin --
+    const elMarginVal       = document.getElementById('info-margin');
     elMarginVal.textContent = `${rupiah(roundTo(margin, 0))} (${marginPct}%)`;
     elMarginVal.style.color = margin >= 0 ? '#27ae60' : '#e74c3c';
 
-    // Tambahkan indikator margin
     const elMarginRow = elMarginVal.closest('.hpp-row');
     if (elMarginRow) {
       if (marginPct >= 30) {
@@ -288,6 +268,32 @@
         elMarginRow.style.background = '#fff5f5';
       }
     }
+
+    // ✅ BARU: Update badge % HPP dengan warna merah/hijau
+    const elHppPct = document.getElementById('info-hpp-pct');
+    if (elHppPct) {
+      if (hargaJual > 0) {
+        elHppPct.textContent = hppPct.toFixed(1) + '%';
+
+        if (hppPct > 35) {
+          // 🔴 Merah — HPP terlalu tinggi (> 35%)
+          elHppPct.style.background  = '#e74c3c';
+          elHppPct.style.color       = '#fff';
+          elHppPct.title             = '⚠️ HPP terlalu tinggi! Idealnya ≤ 35%';
+        } else {
+          // 🟢 Hijau — HPP aman (≤ 35%)
+          elHppPct.style.background  = '#27ae60';
+          elHppPct.style.color       = '#fff';
+          elHppPct.title             = '✅ HPP dalam batas ideal';
+        }
+      } else {
+        // Abu-abu — harga jual belum diisi
+        elHppPct.textContent        = '0%';
+        elHppPct.style.background   = '#bdc3c7';
+        elHppPct.style.color        = '#fff';
+        elHppPct.title              = 'Isi harga jual untuk melihat % HPP';
+      }
+    }
   }
 
   /* ============================================================
@@ -296,7 +302,6 @@
 
   /**
    * Validasi & simpan data HPP menu ke database.
-   * Dipanggil saat user klik "Simpan HPP Menu".
    */
   function simpanHPP() {
     const nama      = document.getElementById('hpp-nama').value.trim();
@@ -304,7 +309,6 @@
     const overhead  = parseFloat(document.getElementById('hpp-overhead').value)  || 0;
     const hargaJual = parseFloat(document.getElementById('hpp-harga-jual').value) || 0;
 
-    // -- Validasi --
     if (isEmpty(nama))
       return showAlert('alert-hpp', '⚠️ Nama menu tidak boleh kosong!', 'error');
 
@@ -318,10 +322,20 @@
     if (hargaJual <= 0)
       return showAlert('alert-hpp', '⚠️ Harga jual harus diisi dan lebih dari 0!', 'error');
 
-    // -- Kalkulasi final --
     const calc = hitungHPP();
 
-    // -- Cek margin negatif, beri warning tapi tetap bisa simpan --
+    // -- Warning jika HPP > 35% --
+    if (calc.hppPct > 35) {
+      const lanjut = confirm(
+        `⚠️ Perhatian!\n\n` +
+        `% HPP kamu adalah ${calc.hppPct}% — melebihi batas ideal 35%.\n` +
+        `HPP: ${rupiah(roundTo(calc.totalHPP, 0))} | Harga Jual: ${rupiah(hargaJual)}\n\n` +
+        `Apakah Anda tetap ingin menyimpan?`
+      );
+      if (!lanjut) return;
+    }
+
+    // -- Warning jika margin negatif --
     if (calc.margin < 0) {
       const lanjut = confirm(
         `⚠️ Perhatian!\n\n` +
@@ -332,30 +346,29 @@
       if (!lanjut) return;
     }
 
-    // -- Simpan ke DB --
     DB.addHPP({
-      id         : uid(),
-      nama       : nama,
-      kategori   : kategori || 'Lainnya',
-      resep      : itemsValid,
-      hppBahan   : roundTo(calc.totalBahan, 2),
-      overhead   : overhead,
-      hppTotal   : roundTo(calc.totalHPP, 2),
-      hargaJual  : hargaJual,
-      margin     : roundTo(calc.margin, 2),
-      marginPct  : calc.marginPct,
-      breakdown  : calc.breakdown,
-      tgl        : tglSekarang()
+      id        : uid(),
+      nama      : nama,
+      kategori  : kategori || 'Lainnya',
+      resep     : itemsValid,
+      hppBahan  : roundTo(calc.totalBahan, 2),
+      overhead  : overhead,
+      hppTotal  : roundTo(calc.totalHPP, 2),
+      hargaJual : hargaJual,
+      margin    : roundTo(calc.margin, 2),
+      marginPct : calc.marginPct,
+      hppPct    : calc.hppPct,   // ✅ BARU: simpan % HPP ke DB
+      breakdown : calc.breakdown,
+      tgl       : tglSekarang()
     });
 
-    // -- Reset form --
     _resetFormHPP();
 
-    // -- Notifikasi sukses --
     showAlert(
       'alert-hpp',
       `✅ HPP menu "${nama}" berhasil disimpan! ` +
       `Total HPP: ${rupiah(roundTo(calc.totalHPP, 0))} | ` +
+      `% HPP: ${calc.hppPct}% | ` +
       `Margin: ${calc.marginPct}%`,
       'success'
     );
@@ -370,22 +383,26 @@
    * @private
    */
   function _resetFormHPP() {
-    // Reset input text & number
     ['hpp-nama', 'hpp-overhead', 'hpp-harga-jual']
       .forEach(id => { document.getElementById(id).value = ''; });
 
-    // Reset select
     document.getElementById('hpp-kategori').value = '';
 
-    // Reset state resep
     resepItems = [];
     _renderResepItems();
 
-    // Sembunyikan preview & margin
-    document.getElementById('hpp-preview').style.display  = 'none';
-    document.getElementById('margin-info').style.display  = 'none';
+    document.getElementById('hpp-preview').style.display = 'none';
+    document.getElementById('margin-info').style.display = 'none';
 
-    // Reset warna background margin row
+    // ✅ Reset badge % HPP
+    const elHppPct = document.getElementById('info-hpp-pct');
+    if (elHppPct) {
+      elHppPct.textContent       = '0%';
+      elHppPct.style.background  = '#bdc3c7';
+      elHppPct.style.color       = '#fff';
+      elHppPct.title             = '';
+    }
+
     const elMarginRow = document.querySelector('#margin-info .hpp-row:last-child');
     if (elMarginRow) elMarginRow.style.background = '';
   }
