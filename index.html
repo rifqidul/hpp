@@ -1,448 +1,461 @@
-  <!DOCTYPE html>
-  <html lang="id">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi HPP Produk</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- ✅ SheetJS hanya di-load SEKALI, di <head> -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  </head>
-  <body>
-
-  <!-- ======================================================
-       HEADER
-  ====================================================== -->
-  <header>
-    <span>🧮</span>
-    <div>
-      <h1>Aplikasi HPP Produk</h1>
-      <small>Hitung Harga Pokok Produksi dengan mudah</small>
-    </div>
-  </header>
-
-  <!-- ======================================================
-       TAB NAVIGATION
-       ✅ FIX: showTab → switchTab
-  ====================================================== -->
-  <div class="tab-container">
-    <button class="tab-btn active" onclick="switchTab('tab-bahan', this)">🥦 Input Bahan Baku</button>
-    <button class="tab-btn" onclick="switchTab('tab-hpp', this)">📝 Input HPP</button>
-    <button class="tab-btn" onclick="switchTab('tab-data-hpp', this)">📊 Data HPP</button>
-    <button class="tab-btn" onclick="switchTab('tab-list-bahan', this)">📦 List Bahan Baku</button>
-    <button class="tab-btn" onclick="switchTab('tab-list-resep', this)">📋 List Resep Menu</button>
-  </div>
-
-  <!-- ======================================================
-       MAIN CONTENT
-  ====================================================== -->
-  <div class="content">
-
-    <!-- ════════════════════════════════════════════════════
-         TAB 1 — INPUT BAHAN BAKU
-    ════════════════════════════════════════════════════ -->
-    <div id="tab-bahan" class="tab-panel active">
-
-      <!-- Form Input Manual -->
-      <div class="card">
-        <h2>🥦 Input Bahan Baku Manual</h2>
-        <div id="alert-bahan" class="alert"></div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nama Bahan Baku *</label>
-            <input type="text" id="bahan-nama" placeholder="cth: Susu UHT, Kopi Arabica">
-          </div>
-          <div class="form-group">
-            <label>Kategori</label>
-            <select id="bahan-kategori">
-              <option value="">-- Pilih Kategori --</option>
-              <option>Bahan Utama</option>
-              <option>Bumbu</option>
-              <option>Sayuran</option>
-              <option>Protein</option>
-              <option>Minuman</option>
-              <option>Kemasan</option>
-              <option>Lainnya</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Informasi Pembelian -->
-        <div class="card-sub">
-          <h3>📦 Informasi Pembelian</h3>
-          <div class="form-row-3">
-            <div class="form-group">
-              <label>Satuan Beli *</label>
-              <select id="bahan-satuan-beli" onchange="hitungHargaSatuan()">
-                <option value="">-- Pilih --</option>
-                <optgroup label="Berat">
-                  <option>kg</option>
-                  <option>gram</option>
-                  <option>ons</option>
-                </optgroup>
-                <optgroup label="Volume">
-                  <option>liter</option>
-                  <option>ml</option>
-                </optgroup>
-                <optgroup label="Satuan">
-                  <option>pcs</option>
-                  <option>butir</option>
-                  <option>buah</option>
-                  <option>ikat</option>
-                  <option>porsi</option>
-                  <option>pack</option>
-                  <option>botol</option>
-                  <option>kaleng</option>
-                </optgroup>
-              </select>
-              <div class="hint">Satuan saat kamu beli</div>
-            </div>
-            <div class="form-group">
-              <label>Jumlah Beli *</label>
-              <input type="number" id="bahan-jumlah-beli"
-                placeholder="cth: 1" min="0" step="0.01"
-                oninput="hitungHargaSatuan()">
-              <div class="hint">Berapa banyak yang dibeli</div>
-            </div>
-            <div class="form-group">
-              <label>Total Harga Beli (Rp) *</label>
-              <input type="number" id="bahan-harga-beli"
-                placeholder="cth: 200000" min="0"
-                oninput="hitungHargaSatuan()">
-              <div class="hint">Total harga yang dibayar</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Satuan Pakai & Konversi -->
-        <div class="card-sub">
-          <h3>🔄 Satuan Pakai &amp; Konversi</h3>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Satuan Pakai *</label>
-              <select id="bahan-satuan-pakai" onchange="hitungHargaSatuan()">
-                <option value="">-- Pilih --</option>
-                <optgroup label="Berat">
-                  <option>kg</option>
-                  <option>gram</option>
-                  <option>ons</option>
-                </optgroup>
-                <optgroup label="Volume">
-                  <option>liter</option>
-                  <option>ml</option>
-                </optgroup>
-                <optgroup label="Satuan">
-                  <option>pcs</option>
-                  <option>butir</option>
-                  <option>buah</option>
-                  <option>ikat</option>
-                  <option>porsi</option>
-                  <option>pack</option>
-                  <option>botol</option>
-                  <option>kaleng</option>
-                </optgroup>
-              </select>
-              <div class="hint">Satuan saat dipakai di resep</div>
-            </div>
-            <div class="form-group">
-              <label>Nilai Konversi *</label>
-              <input type="number" id="bahan-konversi"
-                placeholder="cth: 1000" min="0" step="0.01"
-                oninput="hitungHargaSatuan()">
-              <div class="hint">1 [satuan beli] = ? [satuan pakai]</div>
-            </div>
-          </div>
-
-          <!-- Info konversi otomatis -->
-          <div class="konversi-info" id="konversi-info" style="display:none">
-            <strong>💡 Konversi:</strong>
-            <span id="konversi-contoh"></span>
-          </div>
-
-          <!-- Hasil kalkulasi harga per satuan pakai -->
-          <div id="hasil-konversi" class="hasil-konversi" style="display:none">
-            <div class="hk-row">
-              <span>💰 Harga per <strong id="kv-satuan-beli">-</strong></span>
-              <strong id="kv-harga-per-beli">Rp 0</strong>
-            </div>
-            <div class="hk-row">
-              <span>🧪 Harga per <strong id="kv-satuan-pakai">-</strong></span>
-              <strong id="kv-harga-per-pakai" style="color:#27ae60;font-size:1.05rem">Rp 0</strong>
-            </div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary" onclick="simpanBahan()">💾 Simpan Bahan Baku</button>
-      </div>
-
-      <!-- Import Excel -->
-      <div class="card">
-        <h2>📥 Import Bahan Baku dari Excel</h2>
-        <div id="alert-import" class="alert"></div>
-
-        <!-- Step 1 -->
-        <div class="card-sub">
-          <h3><span class="step-badge">1</span> Download Template Excel</h3>
-          <p class="step-desc">
-            Download template terlebih dahulu, isi data bahan baku sesuai format, lalu upload kembali.
-          </p>
-          <button class="btn btn-info" onclick="downloadTemplate()">⬇️ Download Template Excel</button>
-          <div class="template-hint">
-            <strong>Kolom dalam template:</strong>
-            Nama Bahan | Kategori | Satuan Beli | Jumlah Beli | Total Harga Beli | Satuan Pakai | Nilai Konversi
-          </div>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="card-sub">
-          <h3><span class="step-badge">2</span> Upload File Excel</h3>
-          <div class="import-zone" id="import-zone"
-            onclick="document.getElementById('file-excel').click()"
-            ondragover="event.preventDefault(); this.classList.add('dragover')"
-            ondragleave="this.classList.remove('dragover')"
-            ondrop="handleDrop(event)">
-            <div class="import-icon">📂</div>
-            <p><strong>Klik untuk pilih file</strong> atau drag &amp; drop di sini</p>
-            <p class="import-sub">Format: .xlsx atau .xls</p>
-          </div>
-          <input type="file" id="file-excel" accept=".xlsx,.xls"
-            style="display:none" onchange="handleFileUpload(event)">
-        </div>
-
-        <!-- Step 3 & 4 -->
-        <div id="import-preview-section" style="display:none">
-          <div class="card-sub">
-            <h3><span class="step-badge">3</span> Preview Data</h3>
-            <div id="import-summary"></div>
-            <div class="preview-table table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nama Bahan</th>
-                    <th>Kategori</th>
-                    <th>Satuan Beli</th>
-                    <th>Jml Beli</th>
-                    <th>Harga Beli</th>
-                    <th>Satuan Pakai</th>
-                    <th>Konversi</th>
-                    <th>Harga/Satuan Pakai</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="tbody-preview"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card-sub">
-            <h3><span class="step-badge">4</span> Pilih Mode Import</h3>
-            <div class="import-option">
-              <label>
-                <input type="radio" name="import-mode" value="modify" checked
-                  onchange="toggleReplaceWarning(this.value)">
-                <span>➕ <strong>Modify</strong> — Tambahkan ke data yang ada</span>
-              </label>
-              <label>
-                <input type="radio" name="import-mode" value="replace"
-                  onchange="toggleReplaceWarning(this.value)">
-                <span>🔄 <strong>Replace</strong> — Ganti semua data bahan baku</span>
-              </label>
-            </div>
-            <div id="replace-warning" class="replace-warning" style="display:none">
-              ⚠️ Mode <strong>Replace</strong> akan menghapus <strong>seluruh data bahan baku</strong>
-              yang ada dan menggantinya dengan data baru!
-            </div>
-            <div class="import-actions">
-              <button class="btn btn-success" onclick="prosesImport()">✅ Import Sekarang</button>
-              <button class="btn btn-grey" onclick="batalImport()">❌ Batal</button>
-            </div>
-          </div>
-        </div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator HPP & Resep Card</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+  <style>
+    .container { max-width: 1200px; }
+    nav ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card { padding: 1rem; background: var(--card-background-color); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .badge { font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 12px; background: #eee; color: #333; }
+    .margin-positif { color: green; font-weight: bold; }
+    .margin-negatif { color: red; font-weight: bold; }
+    .tab-active { background: var(--primary); color: white !important; }
+    .sort-btn { cursor: pointer; user-select: none; }
+    .login-area { display: flex; align-items: center; gap: 0.5rem; }
+    .hidden { display: none; }
+    .resep-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+      <hgroup>
+        <h1>🍵 Kalkulator HPP & Resep</h1>
+        <p>Database bahan baku, resep, dan directory card</p>
+      </hgroup>
+      <div class="login-area">
+        <span id="userEmail" class="hidden"></span>
+        <button id="loginBtn" class="secondary">🔐 Login</button>
+        <button id="logoutBtn" class="secondary hidden">🚪 Logout</button>
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════
-         TAB 2 — INPUT HPP
-    ════════════════════════════════════════════════════ -->
-    <div id="tab-hpp" class="tab-panel">
-      <div class="card">
-        <h2>📝 Input HPP Menu</h2>
-        <div id="alert-hpp" class="alert"></div>
+    <!-- Navigasi Tab -->
+    <nav>
+      <ul>
+        <li><a href="#" data-tab="bahan" class="tab-link tab-active">🧂 Bahan Baku</a></li>
+        <li><a href="#" data-tab="menu" class="tab-link">📋 Menu/Resep</a></li>
+        <li><a href="#" data-tab="hpp" class="tab-link">📊 Daftar HPP</a></li>
+        <li><a href="#" data-tab="directory" class="tab-link">🃏 Directory Resep</a></li>
+      </ul>
+    </nav>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nama Menu *</label>
-            <input type="text" id="hpp-nama" placeholder="cth: Nasi Goreng Spesial">
-          </div>
-          <div class="form-group">
-            <label>Kategori Menu</label>
-            <select id="hpp-kategori">
-              <option value="">-- Pilih Kategori --</option>
-              <option>Makanan</option>
-              <option>Minuman</option>
-              <option>Snack</option>
-              <option>Dessert</option>
-              <option>Lainnya</option>
-            </select>
-          </div>
-        </div>
+    <!-- Konten Dinamis -->
+    <div id="tab-content"></div>
+  </main>
 
-        <div class="form-group">
-          <label>📋 Resep / Bahan yang Digunakan</label>
-          <div id="resep-container"></div>
-          <button class="btn-add" onclick="tambahResepItem()">+ Tambah Bahan</button>
-        </div>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ======================== KONFIGURASI ========================
+    // GANTI dengan URL dan anon key Supabase kamu
+    const SUPABASE_URL = 'https://xxxxxxxxxxxx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+    
+    // Inisialisasi Supabase (langsung, tanpa prompt)
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // =============================================================
 
-        <div id="hpp-preview" class="hpp-detail" style="display:none">
-          <strong>💰 Rincian Bahan</strong>
-          <div id="hpp-breakdown"></div>
-        </div>
+    // State global
+    let currentUser = null;
 
-        <div class="form-row" style="margin-top:16px">
-          <div class="form-group">
-            <label>Biaya Overhead (Rp)</label>
-            <input type="number" id="hpp-overhead"
-              placeholder="cth: 2000" min="0" oninput="hitungHPP()">
-          </div>
-          <div class="form-group">
-            <label>Harga Jual (Rp) *</label>
-            <input type="number" id="hpp-harga-jual"
-              placeholder="cth: 25000" min="0" oninput="hitungHPP()">
-          </div>
-        </div>
+    // Cek session awal & listener perubahan auth
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentUser = session?.user ?? null;
+      updateAuthUI();
+      loadTab(document.querySelector('.tab-active')?.dataset.tab || 'bahan');
+    });
 
-        <div id="margin-info" class="hpp-detail" style="display:none">
-          <div class="hpp-row"><span>Total HPP Bahan</span><span id="info-hpp-bahan">Rp 0</span></div>
-          <div class="hpp-row"><span>Overhead</span><span id="info-overhead">Rp 0</span></div>
-          <div class="hpp-row"><span>Total HPP</span><span id="info-hpp-total">Rp 0</span></div>
-          <div class="hpp-row"><span>% HPP <small>(ideal ≤ 35%)</small></span><span id="info-hpp-pct" class="hpp-pct-badge">0%</span></div>
-          <div class="hpp-row"><span>Harga Jual</span><span id="info-harga-jual">Rp 0</span></div>
-          <div class="hpp-row"><span>Margin / Profit</span><span id="info-margin">Rp 0 (0%)</span></div>
-        </div>
+    // Fungsi update UI login/logout
+    function updateAuthUI() {
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const userEmail = document.getElementById('userEmail');
+      if (currentUser) {
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        userEmail.classList.remove('hidden');
+        userEmail.textContent = '👤 ' + currentUser.email;
+      } else {
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        userEmail.classList.add('hidden');
+      }
+    }
 
-        <button class="btn btn-success" style="margin-top:16px" onclick="simpanHPP()">
-          💾 Simpan HPP Menu
-        </button>
-      </div>
-    </div>
+    // Tombol Login
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = prompt('Email terdaftar di Supabase Auth:');
+      if (!email) return;
+      const password = prompt('Password:');
+      if (!password) return;
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) alert('Login gagal: ' + error.message);
+      // UI akan terupdate otomatis oleh listener
+    });
 
-    <!-- ════════════════════════════════════════════════════
-         TAB 3 — DATA HPP
-    ════════════════════════════════════════════════════ -->
-    <div id="tab-data-hpp" class="tab-panel">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-num" id="stat-menu">0</div>
-          <div class="stat-label">Total Menu</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-num" id="stat-avg-margin">0%</div>
-          <div class="stat-label">Rata-rata Margin</div>
-        </div>
-        <!-- ✅ FIX: stat-avg-hpp → stat-hpp (sesuai render.js) -->
-        <div class="stat-card orange">
-          <div class="stat-num" id="stat-hpp">Rp0</div>
-          <div class="stat-label">Rata-rata HPP</div>
-        </div>
-      </div>
-      <div class="card">
-        <h2>📊 Data HPP Menu</h2>
-        <div class="search-box">
-          <input type="text" id="search-hpp"
-            placeholder="🔍 Cari nama menu..." oninput="renderDataHPP()">
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Nama Menu</th>
-                <th>Kategori</th>
-                <th>HPP Bahan</th>
-                <th>Overhead</th>
-                <th>Total HPP</th>
-                <th>Harga Jual</th>
-                <th>Margin</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-hpp"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    // Tombol Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      // UI update otomatis
+    });
 
-    <!-- ════════════════════════════════════════════════════
-         TAB 4 — LIST BAHAN BAKU
-    ════════════════════════════════════════════════════ -->
-    <div id="tab-list-bahan" class="tab-panel">
-      <div class="card">
-        <h2>📦 List Bahan Baku</h2>
-        <div class="search-box">
-          <input type="text" id="search-bahan"
-            placeholder="🔍 Cari nama bahan..." oninput="renderListBahan()">
+    // ===================== NAVIGASI =====================
+    document.querySelectorAll('.tab-link').forEach(link => {
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('tab-active'));
+        link.classList.add('tab-active');
+        await loadTab(link.dataset.tab);
+      });
+    });
+
+    async function loadTab(tab) {
+      const content = document.getElementById('tab-content');
+      switch(tab) {
+        case 'bahan': content.innerHTML = await renderBahanBaku(); break;
+        case 'menu': content.innerHTML = await renderMenu(); break;
+        case 'hpp': content.innerHTML = await renderHPP(); break;
+        case 'directory': content.innerHTML = await renderDirectory(); break;
+        default: content.innerHTML = '';
+      }
+    }
+
+    // ===================== BAHAN BAKU =====================
+    async function fetchBahanBaku() {
+      const { data, error } = await supabase.from('bahan_baku').select('*').order('nama');
+      if (error) { alert(error.message); return []; }
+      return data;
+    }
+
+    async function renderBahanBaku() {
+      const items = await fetchBahanBaku();
+      let html = `<h2>Daftar Bahan Baku</h2>`;
+      if (currentUser) {
+        html += `<button id="tambahBahan" class="primary">+ Tambah Bahan</button>`;
+      }
+      html += `<table><thead><tr><th>Nama</th><th>Satuan</th><th>Harga/Satuan</th>`;
+      if (currentUser) html += `<th>Aksi</th>`;
+      html += `</tr></thead><tbody>`;
+      items.forEach(i => {
+        html += `<tr>
+          <td>${i.nama}</td><td>${i.satuan}</td><td>Rp ${i.harga_per_satuan}</td>`;
+        if (currentUser) {
+          html += `<td><button class="hapus-bahan" data-id="${i.id}">🗑️</button></td>`;
+        }
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+      setTimeout(() => {
+        if (currentUser) {
+          document.getElementById('tambahBahan')?.addEventListener('click', tambahBahanForm);
+          document.querySelectorAll('.hapus-bahan').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (confirm('Hapus?')) {
+                await supabase.from('bahan_baku').delete().eq('id', btn.dataset.id);
+                await loadTab('bahan');
+              }
+            });
+          });
+        }
+      }, 100);
+      return html;
+    }
+
+    function tambahBahanForm() {
+      const html = `
+        <article>
+          <h3>Tambah Bahan Baku</h3>
+          <input id="namaBahan" placeholder="Nama bahan"><br>
+          <input id="satuanBahan" placeholder="Satuan (gr/ml/pcs)"><br>
+          <input id="hargaBahan" type="number" placeholder="Harga per satuan"><br>
+          <button id="simpanBahan">Simpan</button>
+          <button id="batalBahan" class="secondary">Batal</button>
+        </article>`;
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      document.getElementById('tab-content').prepend(div);
+      document.getElementById('simpanBahan').addEventListener('click', async () => {
+        const nama = document.getElementById('namaBahan').value.trim();
+        const satuan = document.getElementById('satuanBahan').value.trim();
+        const harga = parseFloat(document.getElementById('hargaBahan').value);
+        if (!nama || !satuan || isNaN(harga)) return alert('Lengkapi data');
+        const { error } = await supabase.from('bahan_baku').insert({ nama, satuan, harga_per_satuan: harga });
+        if (error) alert(error.message);
+        else {
+          div.remove();
+          await loadTab('bahan');
+        }
+      });
+      document.getElementById('batalBahan').addEventListener('click', () => {
+        div.remove();
+      });
+    }
+
+    // ===================== MENU / RESEP =====================
+    async function fetchMenu() {
+      const { data, error } = await supabase.from('menu').select('*').order('nama');
+      if (error) { alert(error.message); return []; }
+      return data;
+    }
+
+    async function renderMenu() {
+      const menus = await fetchMenu();
+      let html = `<h2>Daftar Menu</h2>`;
+      if (currentUser) {
+        html += `<button id="tambahMenu" class="primary">+ Menu Baru</button>`;
+      }
+      html += `<table><thead><tr><th>Nama</th><th>Kategori</th><th>Sub</th><th>Harga Jual</th>`;
+      if (currentUser) html += `<th>Aksi</th>`;
+      html += `</tr></thead><tbody>`;
+      menus.forEach(m => {
+        html += `<tr>
+          <td>${m.nama}</td><td>${m.kategori}</td><td>${m.sub_kategori || '-'}</td>
+          <td>Rp ${m.harga_jual}</td>`;
+        if (currentUser) {
+          html += `<td>
+            <button class="edit-menu" data-id="${m.id}">✏️</button>
+            <button class="hapus-menu" data-id="${m.id}">🗑️</button>
+          </td>`;
+        }
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+      setTimeout(() => {
+        if (currentUser) {
+          document.getElementById('tambahMenu')?.addEventListener('click', () => formMenu());
+          document.querySelectorAll('.edit-menu').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              const { data } = await supabase.from('menu').select('*').eq('id', btn.dataset.id).single();
+              formMenu(data);
+            });
+          });
+          document.querySelectorAll('.hapus-menu').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (confirm('Hapus menu dan semua resepnya?')) {
+                await supabase.from('menu').delete().eq('id', btn.dataset.id);
+                await loadTab('menu');
+              }
+            });
+          });
+        }
+      }, 100);
+      return html;
+    }
+
+    async function formMenu(menuData = null) {
+      const menu = menuData || {};
+      const { data: bahanList } = await supabase.from('bahan_baku').select('*');
+      const existingResep = menu.id ? (await supabase.from('resep_bahan').select('*, bahan_baku(*)').eq('menu_id', menu.id)).data : [];
+      let html = `<article><h3>${menu.id ? 'Edit' : 'Tambah'} Menu</h3>
+        <input id="namaMenu" placeholder="Nama Menu" value="${menu.nama || ''}"><br>
+        <input id="kategoriMenu" placeholder="Kategori (contoh: Beverage)" value="${menu.kategori || ''}"><br>
+        <input id="subMenu" placeholder="Sub Kategori (contoh: Matcha)" value="${menu.sub_kategori || ''}"><br>
+        <input id="hargaJual" type="number" placeholder="Harga Jual" value="${menu.harga_jual || ''}"><br>
+        <h4>Resep Bahan</h4>
+        <div id="resepContainer">`;
+      existingResep.forEach(r => {
+        html += resepRow(r.bahan_baku_id, r.jumlah, bahanList);
+      });
+      html += `</div>
+        <button id="tambahResepRow" class="secondary">+ Tambah Bahan</button><br><br>
+        <button id="simpanMenu">💾 Simpan Menu</button>
+        <button id="batalMenu" class="secondary">Batal</button></article>`;
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      document.getElementById('tab-content').prepend(div);
+      
+      document.getElementById('tambahResepRow').addEventListener('click', () => {
+        document.getElementById('resepContainer').insertAdjacentHTML('beforeend', resepRow(null, 0, bahanList));
+      });
+
+      document.getElementById('simpanMenu').addEventListener('click', async () => {
+        const nama = document.getElementById('namaMenu').value.trim();
+        const kategori = document.getElementById('kategoriMenu').value.trim();
+        const sub = document.getElementById('subMenu').value.trim();
+        const harga = parseFloat(document.getElementById('hargaJual').value);
+        if (!nama || !kategori || isNaN(harga)) return alert('Nama, Kategori, dan Harga Jual wajib diisi');
+        
+        let menuId = menu.id;
+        if (!menuId) {
+          const { data, error } = await supabase.from('menu').insert({ nama, kategori, sub_kategori: sub, harga_jual: harga }).select();
+          if (error) return alert(error.message);
+          menuId = data[0].id;
+        } else {
+          const { error } = await supabase.from('menu').update({ nama, kategori, sub_kategori: sub, harga_jual: harga }).eq('id', menuId);
+          if (error) return alert(error.message);
+          // Hapus dulu semua resep lama
+          await supabase.from('resep_bahan').delete().eq('menu_id', menuId);
+        }
+
+        const rows = document.querySelectorAll('.resep-row');
+        for (let row of rows) {
+          const select = row.querySelector('.bahan-select');
+          const input = row.querySelector('.jumlah-input');
+          if (!select || !input) continue;
+          const bahanId = select.value;
+          const jumlah = parseFloat(input.value);
+          if (bahanId && jumlah > 0) {
+            await supabase.from('resep_bahan').insert({ menu_id: menuId, bahan_baku_id: bahanId, jumlah });
+          }
+        }
+        div.remove();
+        await loadTab('menu');
+      });
+
+      document.getElementById('batalMenu').addEventListener('click', () => {
+        div.remove();
+      });
+      return html;
+    }
+
+    function resepRow(selectedBahanId = null, jumlah = 0, bahanList) {
+      let options = bahanList.map(b => `<option value="${b.id}" ${b.id === selectedBahanId ? 'selected' : ''}>${b.nama} (${b.satuan})</option>`).join('');
+      return `<div class="resep-row">
+        <select class="bahan-select">${options}</select>
+        <input type="number" class="jumlah-input" placeholder="Jumlah" value="${jumlah}" step="0.01">
+      </div>`;
+    }
+
+    // ===================== DAFTAR HPP =====================
+    async function fetchHPP() {
+      const { data: menus } = await supabase.from('menu').select('*, resep_bahan(jumlah, bahan_baku(harga_per_satuan, nama, satuan))');
+      if (!menus) return [];
+      return menus.map(m => {
+        const hpp = m.resep_bahan.reduce((sum, rb) => sum + (rb.jumlah * (rb.bahan_baku?.harga_per_satuan || 0)), 0);
+        const margin = m.harga_jual - hpp;
+        const persen = m.harga_jual !== 0 ? (hpp / m.harga_jual) * 100 : 0;
+        return { ...m, hpp, margin, persen_hpp: persen };
+      });
+    }
+
+    async function renderHPP() {
+      const data = await fetchHPP();
+      window.hppData = data;
+      let html = `<h2>Daftar HPP & Margin</h2>
+        <table id="hppTable"><thead><tr>
+          <th class="sort-btn" data-sort="nama">Nama 🔽</th>
+          <th class="sort-btn" data-sort="kategori">Kategori</th>
+          <th class="sort-btn" data-sort="hpp">HPP</th>
+          <th class="sort-btn" data-sort="harga_jual">Harga Jual</th>
+          <th class="sort-btn" data-sort="margin">Margin</th>
+          <th class="sort-btn" data-sort="persen_hpp">% HPP</th>
+        </tr></thead><tbody>`;
+      data.forEach(d => {
+        const marginClass = d.margin >= 0 ? 'margin-positif' : 'margin-negatif';
+        html += `<tr>
+          <td>${d.nama}</td><td>${d.kategori} - ${d.sub_kategori || ''}</td>
+          <td>Rp ${d.hpp.toFixed(0)}</td><td>Rp ${d.harga_jual}</td>
+          <td class="${marginClass}">Rp ${d.margin.toFixed(0)}</td>
+          <td>${d.persen_hpp.toFixed(1)}%</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      setTimeout(() => {
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+          btn.addEventListener('click', () => sortTable(btn.dataset.sort));
+        });
+      }, 100);
+      return html;
+    }
+
+    function sortTable(field) {
+      const data = window.hppData;
+      if (!data) return;
+      const sorted = [...data].sort((a, b) => {
+        const valA = typeof a[field] === 'string' ? a[field].toLowerCase() : a[field];
+        const valB = typeof b[field] === 'string' ? b[field].toLowerCase() : b[field];
+        return valA > valB ? 1 : -1;
+      });
+      window.hppData = sorted;
+      const tbody = document.querySelector('#hppTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = sorted.map(d => {
+        const marginClass = d.margin >= 0 ? 'margin-positif' : 'margin-negatif';
+        return `<tr>
+          <td>${d.nama}</td><td>${d.kategori} - ${d.sub_kategori || ''}</td>
+          <td>Rp ${d.hpp.toFixed(0)}</td><td>Rp ${d.harga_jual}</td>
+          <td class="${marginClass}">Rp ${d.margin.toFixed(0)}</td>
+          <td>${d.persen_hpp.toFixed(1)}%</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ===================== DIRECTORY RESEP CARD =====================
+    async function renderDirectory() {
+      const data = await fetchHPP();
+      const categories = [...new Set(data.map(d => d.kategori))];
+      let html = `<h2>Directory Resep Card</h2>
+        <div class="grid">
+          <input id="searchDir" placeholder="Cari nama resep...">
+          <select id="filterKategori"><option value="">Semua Kategori</option>
+            ${categories.map(c => `<option>${c}</option>`).join('')}
+          </select>
+          <select id="filterSub"><option value="">Semua Sub</option></select>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Nama Bahan</th>
-                <th>Kategori</th>
-                <th>Satuan Beli</th>
-                <th>Harga Beli</th>
-                <th>Satuan Pakai</th>
-                <th>Konversi</th>
-                <th>Harga / Satuan Pakai</th>
-                <th>Tgl Input</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-bahan"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+        <div id="cardContainer" class="grid-cards"></div>`;
 
-    <!-- ════════════════════════════════════════════════════
-         TAB 5 — LIST RESEP MENU
-    ════════════════════════════════════════════════════ -->
-    <div id="tab-list-resep" class="tab-panel">
-      <div class="card">
-        <h2>📋 List Resep Menu</h2>
-        <div class="search-box">
-          <input type="text" id="search-resep"
-            placeholder="🔍 Cari nama menu..." oninput="renderListResep()">
-        </div>
-        <div id="resep-list-container"></div>
-      </div>
-    </div>
+      setTimeout(() => {
+        const filterKategori = document.getElementById('filterKategori');
+        const filterSub = document.getElementById('filterSub');
+        const search = document.getElementById('searchDir');
+        if (!filterKategori || !filterSub || !search) return;
 
-  </div><!-- end .content -->
+        const updateSub = () => {
+          const selectedCat = filterKategori.value;
+          const subs = data.filter(d => !selectedCat || d.kategori === selectedCat).map(d => d.sub_kategori).filter(Boolean);
+          const uniqueSubs = [...new Set(subs)];
+          filterSub.innerHTML = '<option value="">Semua Sub</option>' + uniqueSubs.map(s => `<option>${s}</option>`).join('');
+        };
+        filterKategori.addEventListener('change', updateSub);
+        updateSub();
 
-  <!-- ======================================================
-       MODAL KONFIRMASI HAPUS
-  ====================================================== -->
-  <div class="modal-overlay" id="modal-hapus">
-    <div class="modal">
-      <h3>⚠️ Konfirmasi Hapus</h3>
-      <p id="modal-msg">Apakah Anda yakin ingin menghapus data ini?</p>
-      <div class="modal-actions">
-        <button class="btn btn-grey" onclick="tutupModal()">Batal</button>
-        <button class="btn btn-danger" onclick="konfirmasiHapus()">🗑 Hapus</button>
-      </div>
-    </div>
-  </div>
+        const filterAndRender = () => {
+          const keyword = search.value.toLowerCase();
+          const cat = filterKategori.value;
+          const sub = filterSub.value;
+          const filtered = data.filter(d => {
+            if (keyword && !d.nama.toLowerCase().includes(keyword)) return false;
+            if (cat && d.kategori !== cat) return false;
+            if (sub && d.sub_kategori !== sub) return false;
+            return true;
+          });
+          const container = document.getElementById('cardContainer');
+          if (!container) return;
+          container.innerHTML = filtered.map(d => {
+            const marginClass = d.margin >= 0 ? 'margin-positif' : 'margin-negatif';
+            const bahanList = d.resep_bahan.map(rb => {
+              const nama = rb.bahan_baku?.nama || '?';
+              const harga = rb.bahan_baku?.harga_per_satuan || 0;
+              return `<li>${rb.jumlah} ${rb.bahan_baku?.satuan || ''} ${nama} (Rp ${harga})</li>`;
+            }).join('');
+            return `<div class="card">
+              <h3>${d.nama}</h3>
+              <span class="badge">${d.kategori} / ${d.sub_kategori || 'Umum'}</span>
+              <p>💵 Harga Jual: <strong>Rp ${d.harga_jual}</strong></p>
+              <p>🧮 HPP: Rp ${d.hpp.toFixed(0)} | Margin: <span class="${marginClass}">Rp ${d.margin.toFixed(0)}</span> (${d.persen_hpp.toFixed(1)}%)</p>
+              <details><summary>📦 Bahan Baku</summary><ul>${bahanList}</ul></details>
+            </div>`;
+          }).join('');
+        };
 
-  <!-- ======================================================
-       LOAD JAVASCRIPT (urutan penting!)
-       ✅ SheetJS TIDAK di-load lagi di sini (sudah ada di <head>)
-  ====================================================== -->
-  <script src="js/db.js"></script>
-  <script src="js/bahan.js"></script>
-  <script src="js/hpp.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/app.js"></script>
+        search.addEventListener('input', filterAndRender);
+        filterKategori.addEventListener('change', filterAndRender);
+        filterSub.addEventListener('change', filterAndRender);
+        filterAndRender();
+      }, 100);
+      return html;
+    }
 
-  </body>
-  </html>
+    // Load tab default (bahan)
+    window.addEventListener('load', () => {
+      loadTab('bahan');
+    });
+  </script>
+</body>
+</html>
