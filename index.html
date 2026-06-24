@@ -109,15 +109,17 @@
 
     </div>
 
-    <script>
+<script>
         // 1. Inisialisasi Supabase menggunakan kredensial Anda
         const SUPABASE_URL = 'https://mslsgobvzzxxkwfvpjhx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbHNnb2J2enp4eGt3ZnZwamh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzAzMDEsImV4cCI6MjA5NzgwNjMwMX0.V7pUmC3En3O0pc3VamJUm9eq7cnB7UFLi333LmtnJqQ';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // PERBAIKAN: Mengubah nama variabel menjadi supabaseClient agar tidak bentrok dengan CDN global
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // State & Variabel Global
         let bahanBakuList = [];
-        let tempKomposisi = []; // Menyimpan bahan sementara sebelum resep disimpan
+        let tempKomposisi = [];
 
         // Format Rupiah
         const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
@@ -138,8 +140,8 @@
            MODUL 1: BAHAN BAKU
            ======================== */
         async function loadBahanBaku() {
-            const { data, error } = await supabase.from('bahan_baku').select('*').order('nama', { ascending: true });
-            if (error) return alert("Error fetching bahan baku!");
+            const { data, error } = await supabaseClient.from('bahan_baku').select('*').order('nama', { ascending: true });
+            if (error) return console.error("Error fetching bahan baku!", error);
             bahanBakuList = data;
             
             const tbody = document.getElementById('table-bahan-baku');
@@ -162,10 +164,10 @@
 
             if(!nama || !satuan || !harga) return alert("Lengkapi data bahan baku!");
 
-            const { data, error } = await supabase.from('bahan_baku').insert([{ nama, satuan, harga }]);
+            const { data, error } = await supabaseClient.from('bahan_baku').insert([{ nama, satuan, harga }]);
             if (error) alert("Gagal menyimpan!");
             else {
-                alert("Berhasil!");
+                alert("Bahan baku berhasil ditambahkan!");
                 document.getElementById('bb-nama').value = '';
                 document.getElementById('bb-satuan').value = '';
                 document.getElementById('bb-harga').value = '';
@@ -177,7 +179,7 @@
            MODUL 2: INPUT HPP & RESEP
            ======================== */
         async function loadDropdownBahanBaku() {
-            const { data } = await supabase.from('bahan_baku').select('*').order('nama');
+            const { data } = await supabaseClient.from('bahan_baku').select('*').order('nama');
             bahanBakuList = data;
             const select = document.getElementById('r-pilih-bb');
             select.innerHTML = '<option value="">-- Pilih Bahan Baku --</option>';
@@ -186,7 +188,6 @@
             });
         }
 
-        // Live calculation Harga Jual Input
         document.getElementById('r-harga-jual').addEventListener('input', updateKalkulasiHPP);
 
         function addTempKomposisi() {
@@ -257,8 +258,7 @@
                 return alert("Lengkapi data menu dan komposisi!");
             }
 
-            // 1. Simpan ke tabel resep
-            const { data: resepData, error: resepErr } = await supabase
+            const { data: resepData, error: resepErr } = await supabaseClient
                 .from('resep')
                 .insert([{ nama, kategori, sub_kategori: sub, harga_jual }])
                 .select();
@@ -267,19 +267,17 @@
             
             const newResepId = resepData[0].id;
 
-            // 2. Simpan ke tabel resep_detail (batch insert)
             const detailPayload = tempKomposisi.map(item => ({
                 resep_id: newResepId,
                 bahan_baku_id: item.bahan_baku_id,
                 qty: item.qty
             }));
 
-            const { error: detailErr } = await supabase.from('resep_detail').insert(detailPayload);
+            const { error: detailErr } = await supabaseClient.from('resep_detail').insert(detailPayload);
 
             if(detailErr) alert("Resep tersimpan tapi gagal menyimpan komposisi.");
             else {
                 alert("Resep berhasil disimpan!");
-                // Reset Form
                 document.getElementById('r-nama').value = '';
                 document.getElementById('r-kategori').value = '';
                 document.getElementById('r-sub').value = '';
@@ -293,8 +291,7 @@
            MODUL 3: DIREKTORI RESEP
            ======================== */
         async function loadDirektori() {
-            // Relational Query: Ambil Resep beserta resep_detail dan bahan_baku terkait
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('resep')
                 .select(`
                     id, nama, kategori, sub_kategori, harga_jual,
@@ -304,9 +301,8 @@
                     )
                 `);
 
-            if(error) return alert("Error fetching data direktori!");
+            if(error) return console.error("Error fetching data direktori!", error);
 
-            // Kalkulasi Data & HPP per menu
             let processedData = data.map(menu => {
                 let totalCost = 0;
                 let komposisiHTML = '';
@@ -329,7 +325,6 @@
                 };
             });
 
-            // Filter by Search
             const searchKeyword = document.getElementById('search-resep').value.toLowerCase();
             if(searchKeyword) {
                 processedData = processedData.filter(m => 
@@ -339,18 +334,16 @@
                 );
             }
 
-            // Sort by
             const sortBy = document.getElementById('sort-resep').value;
             if(sortBy === 'nama') processedData.sort((a,b) => a.nama.localeCompare(b.nama));
             if(sortBy === 'hpp_asc') processedData.sort((a,b) => a.hppPersen - b.hppPersen);
             if(sortBy === 'hpp_desc') processedData.sort((a,b) => b.hppPersen - a.hppPersen);
 
-            // Render Cards
             const grid = document.getElementById('recipe-grid');
             grid.innerHTML = '';
 
             processedData.forEach(menu => {
-                let hppColor = menu.hppPersen > 35 ? 'text-red-600' : 'text-green-600'; // asumsi standard HPP F&B max 35%
+                let hppColor = menu.hppPersen > 35 ? 'text-red-600' : 'text-green-600';
 
                 grid.innerHTML += `
                     <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
@@ -388,11 +381,9 @@
             });
         }
 
-        // Initialize pertama kali buka
         window.onload = () => {
             loadDirektori();
         };
-
     </script>
 </body>
 </html>
