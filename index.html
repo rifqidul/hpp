@@ -99,10 +99,61 @@
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="border-b text-gray-700 bg-gray-50">
-                                <th class="p-3">Nama Bahan</th><th class="p-3 text-center border-l border-r bg-gray-100" colspan="2">INFO PEMBELIAN</th><th class="p-3 text-center" colspan="2">INFO RESEP (YIELD)</th><th class="p-3 text-center w-12 admin-only hidden">Aksi</th>
+                                <th class="p-3 align-top relative border-r" rowspan="2" style="width: 28%;">
+                                    <div class="flex items-center justify-between">
+                                        <span>Nama Bahan</span>
+                                        <button onclick="toggleKebabMenu(event, 'sort-nama')" class="text-[10px] bg-gray-200 hover:bg-gray-300 px-1.5 py-1 rounded focus:outline-none">▼</button>
+                                    </div>
+                                    <div id="sort-nama" class="dropdown-menu hidden absolute top-12 left-2 bg-white shadow-lg rounded border w-36 py-1 text-sm text-gray-700 z-30 font-normal">
+                                        <button onclick="sortBahanBaku('nama', 'asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Urutkan A - Z</button>
+                                        <button onclick="sortBahanBaku('nama', 'desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Urutkan Z - A</button>
+                                    </div>
+                                </th>
+                                <th class="p-3 text-center border-l border-r bg-gray-100" colspan="2">INFO PEMBELIAN</th>
+                                <th class="p-3 text-center" colspan="2">INFO RESEP (YIELD)</th>
+                                <th class="p-3 text-center w-12 border-l admin-only hidden" rowspan="2">Aksi</th>
                             </tr>
-                            <tr class="border-b text-gray-500 text-xs">
-                                <th class="p-2"></th><th class="p-2 border-l bg-gray-100">Beli per...</th><th class="p-2 border-r bg-gray-100">Harga Beli</th><th class="p-2">Nilai Konversi</th><th class="p-2">Harga per Satuan</th><th class="p-2 admin-only hidden"></th>
+                            <tr class="border-b text-gray-500 text-xs bg-gray-50">
+                                <th class="p-2 border-l bg-gray-100 relative">
+                                    <div class="flex items-center justify-between">
+                                        <span>Beli per...</span>
+                                        <button onclick="toggleKebabMenu(event, 'sort-satuan-beli')" class="text-[9px] bg-gray-200 hover:bg-gray-300 px-1 py-0.5 rounded focus:outline-none">▼</button>
+                                    </div>
+                                    <div id="sort-satuan-beli" class="dropdown-menu hidden absolute top-8 left-2 bg-white shadow-lg rounded border w-32 py-1 text-sm text-gray-700 z-30 font-normal">
+                                        <button onclick="sortBahanBaku('satuan_beli', 'asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">A - Z</button>
+                                        <button onclick="sortBahanBaku('satuan_beli', 'desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Z - A</button>
+                                    </div>
+                                </th>
+                                <th class="p-2 border-r bg-gray-100 relative">
+                                    <div class="flex items-center justify-between">
+                                        <span>Harga Beli</span>
+                                        <button onclick="toggleKebabMenu(event, 'sort-harga-beli')" class="text-[9px] bg-gray-200 hover:bg-gray-300 px-1 py-0.5 rounded focus:outline-none">▼</button>
+                                    </div>
+                                    <div id="sort-harga-beli" class="dropdown-menu hidden absolute top-8 left-2 bg-white shadow-lg rounded border w-40 py-1 text-sm text-gray-700 z-30 font-normal">
+                                        <button onclick="sortBahanBaku('harga_beli', 'asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Terendah - Tertinggi</button>
+                                        <button onclick="sortBahanBaku('harga_beli', 'desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Tertinggi - Terendah</button>
+                                    </div>
+                                </th>
+                                <th class="p-2 relative">
+                                    <div class="flex items-center justify-between">
+                                        <span>Nilai Konversi</span>
+                                        <button onclick="toggleKebabMenu(event, 'sort-konversi')" class="text-[9px] bg-gray-200 hover:bg-gray-300 px-1 py-0.5 rounded focus:outline-none">▼</button>
+                                    </div>
+                                    <div id="sort-konversi" class="dropdown-menu hidden absolute top-8 left-2 bg-white shadow-lg rounded border w-40 py-1 text-sm text-gray-700 z-30 font-normal">
+                                        <button onclick="sortBahanBaku('nilai_konversi', 'asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Terkecil - Terbesar</button>
+                                        <button onclick="sortBahanBaku('nilai_konversi', 'desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Terbesar - Terkecil</button>
+                                    </div>
+                                </th>
+                                <th class="p-2 relative">
+                                    <div class="flex items-center justify-between">
+                                        <span>Harga per Satuan</span>
+                                        <button onclick="toggleKebabMenu(event, 'sort-harga-satuan')" class="text-[9px] bg-gray-200 hover:bg-gray-300 px-1 py-0.5 rounded focus:outline-none">▼</button>
+                                    </div>
+                                    <div id="sort-harga-satuan" class="dropdown-menu hidden absolute top-8 right-0 bg-white shadow-lg rounded border w-40 py-1 text-sm text-gray-700 z-30 font-normal text-left">
+                                        <button onclick="sortBahanBaku('harga', 'asc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Terendah - Tertinggi</button>
+                                        <button onclick="sortBahanBaku('harga', 'desc')" class="w-full text-left px-4 py-2 hover:bg-gray-100">Tertinggi - Terendah</button>
+                                    </div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="table-bahan-baku"></tbody>
@@ -226,6 +277,10 @@
         let bbCurrentPage = 1, bbItemsPerPage = 10;
         let adminAktif = null;
 
+        // Sorting State
+        let bbSortKey = 'nama';
+        let bbSortOrder = 'asc';
+
         const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(angka);
         function formatRupiahInput(element) { let val = element.value.replace(/[^,\d]/g, '').toString(); let split = val.split(','); let sisa = split[0].length % 3; let rupiah = split[0].substr(0, sisa); let ribuan = split[0].substr(sisa).match(/\d{3}/gi); if(ribuan) { let separator = sisa ? '.' : ''; rupiah += separator + ribuan.join('.'); } rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah; element.value = rupiah; }
         function getNilaiAsli(stringInput) { return parseFloat(String(stringInput).replace(/[^0-9]/g, '')) || 0; }
@@ -262,37 +317,21 @@
                 userStatus.innerHTML = "👤 Guest (View Only)";
                 userStatus.classList.replace('text-green-600', 'text-gray-500');
                 
-                // Pindah paksa ke tab direktori jika Guest sedang di tab Input
-                if(document.getElementById('tab-input-hpp').classList.contains('active')) {
-                    switchTab('tab-direktori');
-                }
+                if(document.getElementById('tab-input-hpp').classList.contains('active')) { switchTab('tab-direktori'); }
             }
         }
 
         async function loginAdmin() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('btn-submit-login');
-            
+            const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; const btn = document.getElementById('btn-submit-login');
             if(!email || !password) return alert("Masukkan email dan password!");
             btn.innerText = "Memverifikasi...";
-
             const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            
             btn.innerText = "Masuk";
             if(error) alert("Gagal Login: " + error.message);
-            else {
-                closeModal('modal-login');
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-password').value = '';
-                alert("Berhasil masuk sebagai Admin!");
-            }
+            else { closeModal('modal-login'); document.getElementById('login-email').value = ''; document.getElementById('login-password').value = ''; alert("Berhasil masuk sebagai Admin!"); }
         }
 
-        async function logoutAdmin() {
-            await supabaseClient.auth.signOut();
-            alert("Anda telah keluar dari mode Admin.");
-        }
+        async function logoutAdmin() { await supabaseClient.auth.signOut(); alert("Anda telah keluar dari mode Admin."); }
 
         // ================= TAB LOGIC & EVENT LISTENER =================
         function switchTab(tabId) {
@@ -307,15 +346,25 @@
         }
 
         window.addEventListener('click', function(e) { 
-            if (!e.target.matches('.kebab-btn')) { document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); } 
+            // Tutup dropdown menu jika klik di luar tombol dropdown (seperti kebab btn atau sort btn)
+            if (!e.target.closest('button[onclick*="toggleKebabMenu"]')) { 
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); 
+            } 
             if (!e.target.closest('.bb-autocomplete')) {
                 const d1 = document.getElementById('r-dropdown-list'); const d2 = document.getElementById('edit-r-dropdown-list');
                 if(d1) d1.classList.add('hidden'); if(d2) d2.classList.add('hidden');
             }
         });
-        function toggleKebabMenu(event, menuId) { event.stopPropagation(); const targetMenu = document.getElementById(menuId); const isHidden = targetMenu.classList.contains('hidden'); document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); if (isHidden) targetMenu.classList.remove('hidden'); }
 
-        // ================= BAHAN BAKU =================
+        function toggleKebabMenu(event, menuId) { 
+            event.stopPropagation(); 
+            const targetMenu = document.getElementById(menuId); 
+            const isHidden = targetMenu.classList.contains('hidden'); 
+            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); 
+            if (isHidden) targetMenu.classList.remove('hidden'); 
+        }
+
+        // ================= BAHAN BAKU (SORTING & TABEL) =================
         function kalkulasiHargaSatuBB(mode) {
             const prefix = mode === 'edit' ? 'edit-bb-' : 'bb-';
             const hrgBeli = getNilaiAsli(document.getElementById(prefix+'harga-beli').value);
@@ -324,9 +373,19 @@
             document.getElementById(prefix+'harga-final').innerText = `${formatRp(hrgBeli / (konversi > 0 ? konversi : 1))} / ${satuan}`;
         }
 
+        function sortBahanBaku(key, order) {
+            bbSortKey = key;
+            bbSortOrder = order;
+            bbCurrentPage = 1; // Kembali ke halaman 1 saat disortir
+            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
+            renderTabelBahanBaku();
+        }
+
         async function loadBahanBaku() {
-            const { data, error } = await supabaseClient.from('bahan_baku').select('*').order('nama', { ascending: true });
-            if (error) return; bahanBakuList = data; renderTabelBahanBaku();
+            const { data, error } = await supabaseClient.from('bahan_baku').select('*');
+            if (error) return; 
+            bahanBakuList = data; 
+            renderTabelBahanBaku();
         }
 
         function updatePaginationBB() { bbCurrentPage = 1; const val = document.getElementById('bb-per-page').value; bbItemsPerPage = val === 'all' ? bahanBakuList.length : parseInt(val); renderTabelBahanBaku(); }
@@ -335,6 +394,21 @@
         function renderTabelBahanBaku() {
             const searchQuery = document.getElementById('search-bb').value.toLowerCase();
             let filteredData = bahanBakuList.filter(item => item.nama.toLowerCase().includes(searchQuery));
+            
+            // Logika Penyortiran
+            filteredData.sort((a, b) => {
+                let valA = a[bbSortKey] !== null && a[bbSortKey] !== undefined ? a[bbSortKey] : '';
+                let valB = b[bbSortKey] !== null && b[bbSortKey] !== undefined ? b[bbSortKey] : '';
+
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+
+                if (valA < valB) return bbSortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return bbSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Logika Pagination
             const totalData = filteredData.length; const isAll = document.getElementById('bb-per-page').value === 'all';
             let limit = isAll ? totalData : bbItemsPerPage; if(limit === 0) limit = 1;
             const totalPages = Math.ceil(totalData / limit); const startIndex = (bbCurrentPage - 1) * limit; const endIndex = startIndex + limit;
@@ -346,10 +420,10 @@
                 pageData.forEach(item => {
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50 relative">
-                            <td class="p-2 font-medium truncate max-w-xs">${item.nama}</td><td class="p-2 border-l bg-gray-50 text-gray-600">${item.satuan_beli || '-'}</td>
+                            <td class="p-2 font-medium truncate max-w-xs border-r">${item.nama}</td><td class="p-2 border-l bg-gray-50 text-gray-600">${item.satuan_beli || '-'}</td>
                             <td class="p-2 border-r bg-gray-50 font-medium">${item.harga_beli ? formatRp(item.harga_beli) : '-'}</td>
                             <td class="p-2 text-gray-600">${item.nilai_konversi || 1} ${item.satuan}</td><td class="p-2 text-blue-600 font-bold">${formatRp(item.harga)} <span class="text-xs text-gray-400">/ ${item.satuan}</span></td>
-                            <td class="p-2 text-center admin-only ${adminAktif ? '' : 'hidden'}">
+                            <td class="p-2 text-center border-l admin-only ${adminAktif ? '' : 'hidden'}">
                                 <button onclick="toggleKebabMenu(event, 'drop-bb-${item.id}')" class="kebab-btn hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full font-bold">⋮</button>
                                 <div id="drop-bb-${item.id}" class="dropdown-menu hidden absolute right-10 mt-1 bg-white shadow-lg rounded border w-32 py-1 z-20">
                                     <button onclick="bukaModalEditBB(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
@@ -374,7 +448,7 @@
                 btnHTML += `<button onclick="ubahHalamanBB(${Math.min(totalPages, bbCurrentPage + 1)})" class="px-2 py-1 border rounded hover:bg-gray-100 ${bbCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">Next</button>`;
             }
             document.getElementById('bb-pagination-controls').innerHTML = btnHTML;
-            renderAuthUI(); // Paksa sembunyikan kolom jika guest
+            renderAuthUI(); // Sesuaikan kolom aksi
         }
 
         async function tambahBahanBaku() {
@@ -532,7 +606,7 @@
                 });
                 html += `</div>`; wrapper.innerHTML += html;
             });
-            renderAuthUI(); // Paksa sembunyikan tombol admin jika sedang logout
+            renderAuthUI();
         }
 
         async function aksiHapusResep(id, nama) { if(confirm(`Yakin hapus resep "${nama}"?`)) { await supabaseClient.from('resep').delete().eq('id', id); loadDirektori(); } }
