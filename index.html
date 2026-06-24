@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem HPP & Recipe Card F&B</title>
+    <title>Sistem HPP & Recipe Card F&B Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -14,7 +15,7 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <nav class="bg-white shadow-md p-4">
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-40">
         <div class="max-w-6xl mx-auto flex gap-4 font-semibold text-gray-600">
             <button onclick="switchTab('tab-direktori')" id="btn-tab-direktori" class="btn-tab active pb-2">Directory Menu</button>
             <button onclick="switchTab('tab-bahan-baku')" id="btn-tab-bahan-baku" class="btn-tab pb-2">Bahan Baku</button>
@@ -25,15 +26,16 @@
     <div class="max-w-6xl mx-auto mt-6 p-4">
 
         <div id="tab-direktori" class="tab-content active">
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <h2 class="text-2xl font-bold">Directory Recipe Card</h2>
-                <div class="flex gap-2">
-                    <input type="text" id="search-resep" placeholder="Cari menu / kategori..." class="p-2 border rounded" oninput="loadDirektori()">
-                    <select id="sort-resep" class="p-2 border rounded" onchange="loadDirektori()">
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <input type="text" id="search-resep" placeholder="Cari menu / kategori..." class="p-2 border rounded text-sm flex-grow md:flex-grow-0" oninput="loadDirektori()">
+                    <select id="sort-resep" class="p-2 border rounded text-sm" onchange="loadDirektori()">
                         <option value="nama">Sort by Nama</option>
                         <option value="hpp_asc">Sort by %HPP (Terendah)</option>
                         <option value="hpp_desc">Sort by %HPP (Tertinggi)</option>
                     </select>
+                    <button onclick="exportResepToExcel()" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 font-medium">Export All Resep</button>
                 </div>
             </div>
             <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -42,23 +44,37 @@
 
         <div id="tab-bahan-baku" class="tab-content">
             <h2 class="text-2xl font-bold mb-4">Database Bahan Baku</h2>
-            <div class="bg-white p-6 rounded shadow mb-6">
-                <h3 class="text-lg font-semibold mb-2">Input Bahan Baku Baru</h3>
-                <div class="flex gap-4">
-                    <input type="text" id="bb-nama" placeholder="Nama Bahan (ex: Susu UHT)" class="w-full p-2 border rounded">
-                    <input type="text" id="bb-satuan" placeholder="Satuan (ex: ml, gr)" class="w-1/4 p-2 border rounded">
-                    <input type="number" id="bb-harga" placeholder="Harga / Satuan (Rp)" class="w-1/4 p-2 border rounded">
-                    <button onclick="tambahBahanBaku()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Simpan</button>
+            
+            <div class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-2 items-center justify-between border-l-4 border-green-500">
+                <div class="text-sm text-gray-600">
+                    <span class="font-bold block text-gray-800">Alat Bantu Excel:</span>
+                    Gunakan template resmi untuk menghindari kegagalan sinkronisasi database.
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="downloadTemplateBahanBaku()" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-semibold hover:bg-gray-300">1. Unduh Template</button>
+                    <button onclick="document.getElementById('import-bb-file').click()" class="bg-green-600 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-green-700">2. Import Excel</button>
+                    <button onclick="exportBahanBakuToExcel()" class="bg-blue-500 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-blue-600">Ekspor Data Saat Ini</button>
+                    <input type="file" id="import-bb-file" accept=".xlsx, .xls" class="hidden" onchange="importBahanBaku(event)">
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded shadow">
-                <table class="w-full text-left">
+            <div class="bg-white p-6 rounded shadow mb-6">
+                <h3 class="text-lg font-semibold mb-2">Input Bahan Baku Baru Manually</h3>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input type="text" id="bb-nama" placeholder="Nama Bahan (ex: Susu UHT)" class="w-full p-2 border rounded">
+                    <input type="text" id="bb-satuan" placeholder="Satuan (ex: ml, gr, pcs)" class="w-full md:w-1/4 p-2 border rounded">
+                    <input type="number" id="bb-harga" placeholder="Harga / Satuan (Rp)" class="w-full md:w-1/4 p-2 border rounded">
+                    <button onclick="tambahBahanBaku()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold shadow">Simpan</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded shadow overflow-x-auto">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b">
-                            <th class="pb-2">Nama Bahan</th>
-                            <th class="pb-2">Satuan</th>
-                            <th class="pb-2">Harga per Satuan</th>
+                        <tr class="border-b text-gray-700 bg-gray-50">
+                            <th class="p-3">Nama Bahan</th>
+                            <th class="p-3">Satuan</th>
+                            <th class="p-3">Harga per Satuan</th>
                         </tr>
                     </thead>
                     <tbody id="table-bahan-baku">
@@ -68,60 +84,69 @@
         </div>
 
         <div id="tab-input-hpp" class="tab-content">
-            <h2 class="text-2xl font-bold mb-4">Kalkulator & Input HPP</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="form-resep-title" class="text-2xl font-bold">Kalkulator & Input HPP</h2>
+                <div class="flex gap-2">
+                    <button onclick="downloadTemplateResep()" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold hover:bg-gray-300">Unduh Template Resep</button>
+                    <button onclick="document.getElementById('import-resep-file').click()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-green-700">Import Massal Resep</button>
+                    <input type="file" id="import-resep-file" accept=".xlsx, .xls" class="hidden" onchange="importResep(event)">
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-6 rounded shadow">
-                    <h3 class="font-semibold mb-4 text-lg border-b pb-2">Informasi Menu</h3>
+                    <h3 class="font-semibold mb-4 text-lg border-b pb-2 text-blue-600">Informasi Menu</h3>
                     <div class="space-y-4">
-                        <div><label class="block text-sm">Nama Menu</label><input type="text" id="r-nama" class="w-full p-2 border rounded"></div>
+                        <input type="hidden" id="editing-resep-id" value="">
+                        <div><label class="block text-sm font-medium text-gray-700">Nama Menu</label><input type="text" id="r-nama" class="w-full p-2 border rounded mt-1"></div>
                         <div class="flex gap-4">
-                            <div class="w-1/2"><label class="block text-sm">Kategori (ex: Beverage)</label><input type="text" id="r-kategori" class="w-full p-2 border rounded"></div>
-                            <div class="w-1/2"><label class="block text-sm">Sub-Kategori (ex: Matcha)</label><input type="text" id="r-sub" class="w-full p-2 border rounded"></div>
+                            <div class="w-1/2"><label class="block text-sm font-medium text-gray-700">Kategori (ex: Beverage)</label><input type="text" id="r-kategori" class="w-full p-2 border rounded mt-1"></div>
+                            <div class="w-1/2"><label class="block text-sm font-medium text-gray-700">Sub-Kategori (ex: Matcha)</label><input type="text" id="r-sub" class="w-full p-2 border rounded mt-1"></div>
                         </div>
-                        <div><label class="block text-sm">Harga Jual (Rp)</label><input type="number" id="r-harga-jual" class="w-full p-2 border rounded"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">Harga Jual (Rp)</label><input type="number" id="r-harga-jual" class="w-full p-2 border rounded mt-1"></div>
                     </div>
                 </div>
 
                 <div class="bg-white p-6 rounded shadow">
-                    <h3 class="font-semibold mb-4 text-lg border-b pb-2">Komposisi Resep</h3>
+                    <h3 class="font-semibold mb-4 text-lg border-b pb-2 text-blue-600">Komposisi Resep</h3>
                     <div class="flex gap-2 mb-4">
                         <select id="r-pilih-bb" class="w-full p-2 border rounded"></select>
                         <input type="number" id="r-qty-bb" placeholder="Qty" class="w-1/4 p-2 border rounded">
-                        <button onclick="addTempKomposisi()" class="bg-green-600 text-white px-4 rounded hover:bg-green-700">+</button>
+                        <button onclick="addTempKomposisi()" class="bg-green-600 text-white px-4 rounded hover:bg-green-700 font-bold">+</button>
                     </div>
                     <table class="w-full text-left text-sm mb-4">
-                        <thead><tr class="border-b"><th class="pb-1">Bahan</th><th class="pb-1">Qty</th><th class="pb-1">Subtotal</th><th class="pb-1">Aksi</th></tr></thead>
+                        <thead><tr class="border-b text-gray-500"><th class="pb-1">Bahan</th><th class="pb-1">Qty</th><th class="pb-1">Subtotal</th><th class="pb-1 text-center">Aksi</th></tr></thead>
                         <tbody id="temp-komposisi-list"></tbody>
                     </table>
                     
-                    <div class="bg-gray-50 p-4 rounded text-sm space-y-1 mb-4">
+                    <div class="bg-gray-50 p-4 rounded text-sm space-y-1 mb-4 border">
                         <div class="flex justify-between"><span>Total Cost (HPP):</span> <span id="r-total-cost" class="font-bold text-red-600">Rp 0</span></div>
-                        <div class="flex justify-between"><span>Target Harga Jual:</span> <span id="r-target-jual" class="font-bold text-blue-600">Rp 0</span></div>
+                        <div class="flex justify-between"><span>Harga Jual:</span> <span id="r-target-jual" class="font-bold text-blue-600">Rp 0</span></div>
                         <div class="flex justify-between border-t pt-1 mt-1"><span>Persentase HPP:</span> <span id="r-persentase" class="font-bold">0%</span></div>
                         <div class="flex justify-between"><span>Margin Profit:</span> <span id="r-margin" class="font-bold text-green-600">Rp 0</span></div>
                     </div>
 
-                    <button onclick="simpanResepFinal()" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700">Simpan Resep ke Database</button>
+                    <div class="flex gap-2">
+                        <button id="btn-cancel-edit" onclick="resetFormResep()" class="hidden w-1/3 bg-gray-500 text-white py-2 rounded font-bold hover:bg-gray-600">Batal</button>
+                        <button id="btn-submit-resep" onclick="simpanResepFinal()" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 shadow">Simpan Resep ke Database</button>
+                    </div>
                 </div>
             </div>
         </div>
 
     </div>
 
-<script>
-        // 1. Inisialisasi Supabase menggunakan kredensial Anda
+    <script>
+        // 1. Kredensial Supabase Anda
         const SUPABASE_URL = 'https://mslsgobvzzxxkwfvpjhx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbHNnb2J2enp4eGt3ZnZwamh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzAzMDEsImV4cCI6MjA5NzgwNjMwMX0.V7pUmC3En3O0pc3VamJUm9eq7cnB7UFLi333LmtnJqQ';
-        
-        // PERBAIKAN: Mengubah nama variabel menjadi supabaseClient agar tidak bentrok dengan CDN global
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // State & Variabel Global
         let bahanBakuList = [];
         let tempKomposisi = [];
 
-        // Format Rupiah
+        // Format Rupiah Helper
         const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 
         // Logika Pindah Tab
@@ -132,13 +157,20 @@
             document.getElementById('btn-' + tabId).classList.add('active');
 
             if(tabId === 'tab-bahan-baku') loadBahanBaku();
-            if(tabId === 'tab-input-hpp') loadDropdownBahanBaku();
+            if(tabId === 'tab-input-hpp') { loadDropdownBahanBaku(); }
             if(tabId === 'tab-direktori') loadDirektori();
         }
 
-        /* ========================
-           MODUL 1: BAHAN BAKU
-           ======================== */
+        // Tutup dropdown kebab menu jika klik di area mana saja luar menu
+        window.addEventListener('click', function(e) {
+            if (!e.target.matches('.kebab-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
+            }
+        });
+
+        /* ========================================================
+           MODUL 1: BAHAN BAKU (READ, WRITE, TEMPLATE, IMPORT, EXPORT)
+           ======================================================== */
         async function loadBahanBaku() {
             const { data, error } = await supabaseClient.from('bahan_baku').select('*').order('nama', { ascending: true });
             if (error) return console.error("Error fetching bahan baku!", error);
@@ -148,18 +180,18 @@
             tbody.innerHTML = '';
             data.forEach(item => {
                 tbody.innerHTML += `
-                    <tr class="border-b">
-                        <td class="py-2">${item.nama}</td>
-                        <td class="py-2">${item.satuan}</td>
-                        <td class="py-2">${formatRp(item.harga)}</td>
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-medium">${item.nama}</td>
+                        <td class="p-3 text-gray-600">${item.satuan}</td>
+                        <td class="p-3 text-blue-600 font-semibold">${formatRp(item.harga)}</td>
                     </tr>
                 `;
             });
         }
 
         async function tambahBahanBaku() {
-            const nama = document.getElementById('bb-nama').value;
-            const satuan = document.getElementById('bb-satuan').value;
+            const nama = document.getElementById('bb-nama').value.trim();
+            const satuan = document.getElementById('bb-satuan').value.trim();
             const harga = document.getElementById('bb-harga').value;
 
             if(!nama || !satuan || !harga) return alert("Lengkapi data bahan baku!");
@@ -175,15 +207,75 @@
             }
         }
 
-        /* ========================
-           MODUL 2: INPUT HPP & RESEP
-           ======================== */
+        function downloadTemplateBahanBaku() {
+            const dataTemplate = [
+                { "Nama Bahan": "Espresso Blend", "Satuan": "gr", "Harga": 250 },
+                { "Nama Bahan": "Fresh Milk UHT", "Satuan": "ml", "Harga": 18 },
+                { "Nama Bahan": "Powder Matcha Premium", "Satuan": "gr", "Harga": 400 },
+                { "Nama Bahan": "Brown Sugar Syrup", "Satuan": "ml", "Harga": 35 }
+            ];
+            const ws = XLSX.utils.json_to_sheet(dataTemplate);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template Bahan Baku");
+            XLSX.writeFile(wb, "Template_Bahan_Baku.xlsx");
+        }
+
+        function exportBahanBakuToExcel() {
+            if(bahanBakuList.length === 0) return alert("Tidak ada data untuk diekspor!");
+            const dataExport = bahanBakuList.map(item => ({
+                "ID": item.id,
+                "Nama Bahan": item.nama,
+                "Satuan": item.satuan,
+                "Harga": item.harga
+            }));
+            const ws = XLSX.utils.json_to_sheet(dataExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Bahan Baku");
+            XLSX.writeFile(wb, "Database_Bahan_Baku_Export.xlsx");
+        }
+
+        function importBahanBaku(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet);
+
+                if(rows.length === 0) return alert("File Excel kosong atau format tidak sesuai!");
+
+                const cleanData = rows.map(row => ({
+                    nama: row["Nama Bahan"] || row["nama"],
+                    satuan: row["Satuan"] || row["satuan"],
+                    harga: parseFloat(row["Harga"] || row["harga"] || 0)
+                })).filter(r => r.nama && r.satuan);
+
+                const { error } = await supabaseClient.from('bahan_baku').insert(cleanData);
+                if(error) {
+                    alert("Gagal melakukan import data ke Supabase!");
+                    console.error(error);
+                } else {
+                    alert(`Berhasil mengimpor ${cleanData.length} bahan baku baru!`);
+                    loadBahanBaku();
+                }
+                document.getElementById('import-bb-file').value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        /* ========================================================
+           MODUL 2: MANAJEMEN RESEP & HPP (FORM MANUAL & LOGIC)
+           ======================================================== */
         async function loadDropdownBahanBaku() {
             const { data } = await supabaseClient.from('bahan_baku').select('*').order('nama');
-            bahanBakuList = data;
+            bahanBakuList = data || [];
             const select = document.getElementById('r-pilih-bb');
             select.innerHTML = '<option value="">-- Pilih Bahan Baku --</option>';
-            data.forEach(bb => {
+            bahanBakuList.forEach(bb => {
                 select.innerHTML += `<option value="${bb.id}" data-harga="${bb.harga}" data-nama="${bb.nama}" data-satuan="${bb.satuan}">${bb.nama} (${formatRp(bb.harga)}/${bb.satuan})</option>`;
             });
         }
@@ -199,6 +291,11 @@
             const selectedOption = select.options[select.selectedIndex];
             const harga = parseFloat(selectedOption.getAttribute('data-harga'));
             const subtotal = harga * qty;
+
+            // Hindari duplikasi bahan baku di satu form resep
+            if(tempKomposisi.some(item => item.bahan_baku_id == select.value)) {
+                return alert("Bahan baku ini sudah masuk list komposisi!");
+            }
 
             tempKomposisi.push({
                 bahan_baku_id: select.value,
@@ -223,10 +320,10 @@
             tempKomposisi.forEach((item, index) => {
                 tbody.innerHTML += `
                     <tr class="border-b">
-                        <td class="py-1">${item.nama}</td>
-                        <td class="py-1">${item.qty} ${item.satuan}</td>
-                        <td class="py-1">${formatRp(item.subtotal)}</td>
-                        <td class="py-1"><button onclick="removeTempKomposisi(${index})" class="text-red-500 text-xs font-bold">X</button></td>
+                        <td class="py-2">${item.nama}</td>
+                        <td class="py-2 text-gray-600">${item.qty} ${item.satuan}</td>
+                        <td class="py-2 text-blue-600 font-medium">${formatRp(item.subtotal)}</td>
+                        <td class="py-2 text-center"><button onclick="removeTempKomposisi(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button></td>
                     </tr>
                 `;
             });
@@ -249,47 +346,75 @@
         }
 
         async function simpanResepFinal() {
-            const nama = document.getElementById('r-nama').value;
-            const kategori = document.getElementById('r-kategori').value;
-            const sub = document.getElementById('r-sub').value;
+            const resepId = document.getElementById('editing-resep-id').value;
+            const nama = document.getElementById('r-nama').value.trim();
+            const kategori = document.getElementById('r-kategori').value.trim();
+            const sub = document.getElementById('r-sub').value.trim();
             const harga_jual = document.getElementById('r-harga-jual').value;
 
             if(!nama || !kategori || !harga_jual || tempKomposisi.length === 0) {
-                return alert("Lengkapi data menu dan komposisi!");
+                return alert("Lengkapi data menu dan komposisi bahannya!");
             }
 
-            const { data: resepData, error: resepErr } = await supabaseClient
-                .from('resep')
-                .insert([{ nama, kategori, sub_kategori: sub, harga_jual }])
-                .select();
+            let activeResepId = resepId;
 
-            if(resepErr) return alert("Gagal menyimpan resep!");
-            
-            const newResepId = resepData[0].id;
+            if(resepId) {
+                // MODE EDIT: Update info resep utama
+                const { error: updateErr } = await supabaseClient
+                    .from('resep')
+                    .update({ nama, kategori, sub_kategori: sub, harga_jual })
+                    .eq('id', resepId);
+                
+                if(updateErr) return alert("Gagal mengupdate resep!");
 
+                // Hapus resep_detail yang lama terlebih dahulu
+                await supabaseClient.from('resep_detail').delete().eq('resep_id', resepId);
+            } else {
+                // MODE BARU: Insert data resep
+                const { data: resepData, error: resepErr } = await supabaseClient
+                    .from('resep')
+                    .insert([{ nama, kategori, sub_kategori: sub, harga_jual }])
+                    .select();
+
+                if(resepErr) return alert("Gagal menyimpan resep baru!");
+                activeResepId = resepData[0].id;
+            }
+
+            // Insert Komposisi (batch insert)
             const detailPayload = tempKomposisi.map(item => ({
-                resep_id: newResepId,
+                resep_id: activeResepId,
                 bahan_baku_id: item.bahan_baku_id,
                 qty: item.qty
             }));
 
             const { error: detailErr } = await supabaseClient.from('resep_detail').insert(detailPayload);
 
-            if(detailErr) alert("Resep tersimpan tapi gagal menyimpan komposisi.");
+            if(detailErr) alert("Informasi menu tersimpan, namun komposisi detail gagal diperbarui.");
             else {
-                alert("Resep berhasil disimpan!");
-                document.getElementById('r-nama').value = '';
-                document.getElementById('r-kategori').value = '';
-                document.getElementById('r-sub').value = '';
-                document.getElementById('r-harga-jual').value = '';
-                tempKomposisi = [];
-                renderTempKomposisi();
+                alert(resepId ? "Resep berhasil diperbarui!" : "Resep baru berhasil disimpan!");
+                resetFormResep();
+                switchTab('tab-direktori');
             }
         }
 
-        /* ========================
-           MODUL 3: DIREKTORI RESEP
-           ======================== */
+        function resetFormResep() {
+            document.getElementById('editing-resep-id').value = '';
+            document.getElementById('r-nama').value = '';
+            document.getElementById('r-kategori').value = '';
+            document.getElementById('r-sub').value = '';
+            document.getElementById('r-harga-jual').value = '';
+            
+            document.getElementById('form-resep-title').innerText = "Kalkulator & Input HPP";
+            document.getElementById('btn-submit-resep').innerText = "Simpan Resep ke Database";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            
+            tempKomposisi = [];
+            renderTempKomposisi();
+        }
+
+        /* ========================================================
+           MODUL 3: DIREKTORI RESEP & RECIPE CARD (EDIT, DELETE, EXPORT/IMPORT)
+           ======================================================== */
         async function loadDirektori() {
             const { data, error } = await supabaseClient
                 .from('resep')
@@ -297,6 +422,7 @@
                     id, nama, kategori, sub_kategori, harga_jual,
                     resep_detail (
                         qty,
+                        bahan_baku_id,
                         bahan_baku (nama, satuan, harga)
                     )
                 `);
@@ -307,10 +433,15 @@
                 let totalCost = 0;
                 let komposisiHTML = '';
 
-                menu.resep_detail.forEach(det => {
-                    const costBahan = det.qty * det.bahan_baku.harga;
-                    totalCost += costBahan;
-                    komposisiHTML += `<li class="flex justify-between text-sm"><span class="text-gray-600">- ${det.bahan_baku.nama} (${det.qty}${det.bahan_baku.satuan})</span> <span>${formatRp(costBahan)}</span></li>`;
+                // Proteksi jika data relasi kosong/rusak
+                const details = menu.resep_detail || [];
+
+                details.forEach(det => {
+                    if (det.bahan_baku) {
+                        const costBahan = det.qty * det.bahan_baku.harga;
+                        totalCost += costBahan;
+                        komposisiHTML += `<li class="flex justify-between text-sm"><span class="text-gray-600">- ${det.bahan_baku.nama} (${det.qty}${det.bahan_baku.satuan})</span> <span>${formatRp(costBahan)}</span></li>`;
+                    }
                 });
 
                 const margin = menu.harga_jual - totalCost;
@@ -325,6 +456,7 @@
                 };
             });
 
+            // Saring berdasar Pencarian
             const searchKeyword = document.getElementById('search-resep').value.toLowerCase();
             if(searchKeyword) {
                 processedData = processedData.filter(m => 
@@ -334,6 +466,7 @@
                 );
             }
 
+            // Pengurutan
             const sortBy = document.getElementById('sort-resep').value;
             if(sortBy === 'nama') processedData.sort((a,b) => a.nama.localeCompare(b.nama));
             if(sortBy === 'hpp_asc') processedData.sort((a,b) => a.hppPersen - b.hppPersen);
@@ -342,38 +475,39 @@
             const grid = document.getElementById('recipe-grid');
             grid.innerHTML = '';
 
+            if(processedData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-400">Belum ada resep yang sesuai kategori atau filter.</div>`;
+                return;
+            }
+
             processedData.forEach(menu => {
                 let hppColor = menu.hppPersen > 35 ? 'text-red-600' : 'text-green-600';
 
                 grid.innerHTML += `
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-                        <div class="bg-gray-800 text-white p-4">
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 relative">
+                        <div class="absolute top-3 right-3 z-10">
+                            <button onclick="toggleKebabMenu(event, 'dropdown-${menu.id}')" class="kebab-btn bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold focus:outline-none">⋮</button>
+                            <div id="dropdown-${menu.id}" class="dropdown-menu hidden absolute right-0 mt-1 bg-white shadow-lg rounded border w-28 py-1 text-sm text-gray-700">
+                                <button onclick="aksiEditResep(${JSON.stringify(menu).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
+                                <button onclick="aksiHapusResep(${menu.id}, '${menu.nama}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-red-600">🗑️ Delete</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 text-white p-4 pr-12">
                             <span class="text-xs font-bold uppercase bg-blue-500 px-2 py-1 rounded mb-2 inline-block">${menu.kategori} > ${menu.sub_kategori}</span>
-                            <h3 class="text-xl font-bold">${menu.nama}</h3>
+                            <h3 class="text-xl font-bold truncate">${menu.nama}</h3>
                         </div>
                         <div class="p-4">
-                            <h4 class="font-semibold text-sm border-b pb-1 mb-2">Ingredients:</h4>
-                            <ul class="space-y-1 mb-4 h-24 overflow-y-auto">
-                                ${menu.komposisiHTML}
+                            <h4 class="font-semibold text-sm border-b pb-1 mb-2 text-gray-700">Ingredients & Cost:</h4>
+                            <ul class="space-y-1 mb-4 h-24 overflow-y-auto border-b pb-2">
+                                ${menu.komposisiHTML || '<li class="text-xs text-gray-400">Tidak ada komposisi</li>'}
                             </ul>
                             
-                            <div class="bg-gray-50 p-3 rounded text-sm space-y-2 border">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Harga Jual:</span>
-                                    <span class="font-bold">${formatRp(menu.harga_jual)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Total HPP/Cost:</span>
-                                    <span class="font-bold">${formatRp(menu.totalCost)}</span>
-                                </div>
-                                <div class="flex justify-between border-t pt-2">
-                                    <span class="text-gray-500">Margin:</span>
-                                    <span class="font-bold text-green-600">${formatRp(menu.margin)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">% HPP:</span>
-                                    <span class="font-bold ${hppColor}">${menu.hppPersen.toFixed(2)}%</span>
-                                </div>
+                            <div class="bg-gray-50 p-3 rounded text-sm space-y-1.5 border">
+                                <div class="flex justify-between"><span class="text-gray-500">Harga Jual:</span><span class="font-bold text-gray-800">${formatRp(menu.harga_jual)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Total HPP/Cost:</span><span class="font-bold text-red-600">${formatRp(menu.totalCost)}</span></div>
+                                <div class="flex justify-between border-t pt-1.5"><span class="text-gray-500">Margin:</span><span class="font-bold text-green-600">${formatRp(menu.margin)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">% HPP:</span><span class="font-bold ${hppColor}">${menu.hppPersen.toFixed(2)}%</span></div>
                             </div>
                         </div>
                     </div>
@@ -381,6 +515,183 @@
             });
         }
 
+        function toggleKebabMenu(event, menuId) {
+            event.stopPropagation();
+            const targetMenu = document.getElementById(menuId);
+            const isHidden = targetMenu.classList.contains('hidden');
+            
+            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden'));
+            
+            if (isHidden) {
+                targetMenu.classList.remove('hidden');
+            }
+        }
+
+        // FUNGSI AKSI: HAPUS RESEP
+        async function aksiHapusResep(id, nama) {
+            if(confirm(`Apakah Anda yakin ingin menghapus resep "${nama}"?`)) {
+                const { error } = await supabaseClient.from('resep').delete().eq('id', id);
+                if(error) {
+                    alert("Gagal menghapus resep!");
+                } else {
+                    alert("Resep berhasil dihapus!");
+                    loadDirektori();
+                }
+            }
+        }
+
+        // FUNGSI AKSI: EDIT RESEP (Lempar data ke Form Input)
+        async function aksiEditResep(menuObj) {
+            resetFormResep();
+            
+            document.getElementById('editing-resep-id').value = menuObj.id;
+            document.getElementById('r-nama').value = menuObj.nama;
+            document.getElementById('r-kategori').value = menuObj.kategori;
+            document.getElementById('r-sub').value = menuObj.sub_kategori;
+            document.getElementById('r-harga-jual').value = menuObj.harga_jual;
+
+            document.getElementById('form-resep-title').innerText = "Edit Menu: " + menuObj.nama;
+            document.getElementById('btn-submit-resep').innerText = "Simpan Perubahan (Update)";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            // Ambil detail list komposisi asli dari database demi keamanan id bahan baku
+            tempKomposisi = menuObj.resep_detail.map(det => {
+                if(!det.bahan_baku) return null;
+                return {
+                    bahan_baku_id: det.bahan_baku_id,
+                    nama: det.bahan_baku.nama,
+                    satuan: det.bahan_baku.satuan,
+                    qty: det.qty,
+                    subtotal: det.qty * det.bahan_baku.harga
+                };
+            }).filter(item => item !== null);
+
+            switchTab('tab-input-hpp');
+            renderTempKomposisi();
+        }
+
+        /* ========================================================
+           MODUL EXCEL TAMBAHAN UNTUK TEMPLATE & IMPORT RESEP MASSAL
+           ======================================================== */
+        function downloadTemplateResep() {
+            const dataTemplate = [
+                { "Nama Menu": "Matcha Latte Ice", "Kategori": "Beverage", "Sub Kategori": "Matcha", "Harga Jual": 28000, "Nama Bahan Baku": "Powder Matcha Premium", "Qty": 12 },
+                { "Nama Menu": "Matcha Latte Ice", "Kategori": "Beverage", "Sub Kategori": "Matcha", "Harga Jual": 28000, "Nama Bahan Baku": "Fresh Milk UHT", "Qty": 160 },
+                { "Nama Menu": "Matcha Latte Ice", "Kategori": "Beverage", "Sub Kategori": "Matcha", "Harga Jual": 28000, "Nama Bahan Baku": "Brown Sugar Syrup", "Qty": 20 }
+            ];
+            const ws = XLSX.utils.json_to_sheet(dataTemplate);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Template Resep");
+            XLSX.writeFile(wb, "Template_Import_Resep_Massal.xlsx");
+        }
+
+        async function exportResepToExcel() {
+            const { data, error } = await supabaseClient.from('resep').select(`
+                nama, kategori, sub_kategori, harga_jual,
+                resep_detail (qty, bahan_baku (nama, satuan, harga))
+            `);
+            if(error || !data) return alert("Gagal menarik data untuk diekspor.");
+
+            let records = [];
+            data.forEach(m => {
+                m.resep_detail.forEach(d => {
+                    records.push({
+                        "Nama Menu": m.nama,
+                        "Kategori": m.kategori,
+                        "Sub Kategori": m.sub_kategori,
+                        "Harga Jual": m.harga_jual,
+                        "Bahan Baku": d.bahan_baku ? d.bahan_baku.nama : 'N/A',
+                        "Qty Digunakan": d.qty,
+                        "Satuan": d.bahan_baku ? d.bahan_baku.satuan : '',
+                        "Biaya Porsi Item": d.bahan_baku ? (d.qty * d.bahan_baku.harga) : 0
+                    });
+                });
+            });
+
+            const ws = XLSX.utils.json_to_sheet(records);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Database Resep");
+            XLSX.writeFile(wb, "Database_Seluruh_Resep.xlsx");
+        }
+
+        async function importResep(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            // Pastikan database bahan baku paling baru sudah ter-load untuk proses matching nama
+            const { data: bbData } = await supabaseClient.from('bahan_baku').select('*');
+            const localBBMap = {};
+            bbData.forEach(b => { localBBMap[b.nama.toLowerCase().trim()] = b.id; });
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                if(rows.length === 0) return alert("File Excel Kosong!");
+
+                // Group data berdasarkan Nama Menu
+                let resepGroups = {};
+                rows.forEach(row => {
+                    const menuName = row["Nama Menu"];
+                    if(!menuName) return;
+                    if(!resepGroups[menuName]) {
+                        resepGroups[menuName] = {
+                            nama: menuName,
+                            kategori: row["Kategori"] || "Uncategorized",
+                            sub_kategori: row["Sub Kategori"] || "General",
+                            harga_jual: parseFloat(row["Harga Jual"] || 0),
+                            ingredients: []
+                        };
+                    }
+                    
+                    const rawBBName = String(row["Nama Bahan Baku"] || "").toLowerCase().trim();
+                    const matchedId = localBBMap[rawBBName];
+                    
+                    if(matchedId) {
+                        resepGroups[menuName].ingredients.push({
+                            bahan_baku_id: matchedId,
+                            qty: parseFloat(row["Qty"] || 0)
+                        });
+                    } else if(row["Nama Bahan Baku"]) {
+                        console.warn(`Bahan Baku "${row["Nama Bahan Baku"]}" tidak terdaftar di database. Baris ini dilewati.`);
+                    }
+                });
+
+                // Proses Batch Insertion ke Supabase
+                let successCount = 0;
+                for(let key in resepGroups) {
+                    const menu = resepGroups[key];
+                    if(menu.ingredients.length === 0) continue;
+
+                    // 1. Insert resep master
+                    const { data: newResep, error: insErr } = await supabaseClient
+                        .from('resep')
+                        .insert([{ nama: menu.nama, kategori: menu.kategori, sub_kategori: menu.sub_kategori, harga_jual: menu.harga_jual }])
+                        .select();
+
+                    if(!insErr && newResep) {
+                        const newId = newResep[0].id;
+                        // 2. Insert resep detail
+                        const detailPayload = menu.ingredients.map(ing => ({
+                            resep_id: newId,
+                            bahan_baku_id: ing.bahan_baku_id,
+                            qty: ing.qty
+                        }));
+                        await supabaseClient.from('resep_detail').insert(detailPayload);
+                        successCount++;
+                    }
+                }
+
+                alert(`Proses selesai! Berhasil mengimpor ${successCount} Menu Resep baru ke database.`);
+                document.getElementById('import-resep-file').value = '';
+                loadDirektori();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Jalankan trigger muat data pertama kali web dibuka
         window.onload = () => {
             loadDirektori();
         };
