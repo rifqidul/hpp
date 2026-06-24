@@ -13,7 +13,6 @@
         .btn-tab.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
         .modal-enter { animation: modalFadeIn 0.2s ease-out forwards; }
         @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        /* Style scrollbar dropdown */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -21,18 +20,21 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- Navbar -->
-    <nav class="bg-white shadow-md p-4 sticky top-0 z-40">
-        <div class="max-w-6xl mx-auto flex gap-4 font-semibold text-gray-600">
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-40 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex gap-4 font-semibold text-gray-600">
             <button onclick="switchTab('tab-direktori')" id="btn-tab-direktori" class="btn-tab active pb-2">Directory Menu</button>
             <button onclick="switchTab('tab-bahan-baku')" id="btn-tab-bahan-baku" class="btn-tab pb-2">Bahan Baku</button>
-            <button onclick="switchTab('tab-input-hpp')" id="btn-tab-input-hpp" class="btn-tab pb-2">Input Resep Baru</button>
+            <button onclick="switchTab('tab-input-hpp')" id="btn-tab-input-hpp" class="btn-tab pb-2 admin-only hidden">Input Resep Baru</button>
+        </div>
+        <div class="flex items-center gap-3 border-l pl-4">
+            <span id="user-status" class="text-sm font-bold text-gray-500">👤 Guest (View Only)</span>
+            <button id="btn-login" onclick="document.getElementById('modal-login').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-blue-700 shadow">Login</button>
+            <button id="btn-logout" onclick="logoutAdmin()" class="bg-red-600 text-white px-4 py-1.5 rounded text-sm font-bold hover:bg-red-700 shadow hidden">Logout</button>
         </div>
     </nav>
 
     <div class="max-w-6xl mx-auto mt-6 p-4">
 
-        <!-- TAB 1: DIREKTORI RESEP -->
         <div id="tab-direktori" class="tab-content active">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <h2 class="text-2xl font-bold">Directory Recipe Card</h2>
@@ -43,25 +45,18 @@
                         <option value="hpp_asc">Sort by %HPP (Terendah)</option>
                         <option value="hpp_desc">Sort by %HPP (Tertinggi)</option>
                     </select>
-                    <button onclick="exportResepToExcel()" class="bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 font-medium shadow">Export All Resep</button>
+                    <button onclick="exportResepToExcel()" class="admin-only hidden bg-green-600 text-white text-sm px-3 py-2 rounded hover:bg-green-700 font-medium shadow">Export All Resep</button>
                 </div>
             </div>
             
-            <!-- Wrapper Induk untuk Grup Recipe Cards -->
-            <div id="recipe-wrapper" class="space-y-10">
-                <!-- Data di-inject via JS -->
-            </div>
+            <div id="recipe-wrapper" class="space-y-10"></div>
         </div>
 
-        <!-- TAB 2: BAHAN BAKU -->
         <div id="tab-bahan-baku" class="tab-content">
             <h2 class="text-2xl font-bold mb-4">Database Bahan Baku & Konversi</h2>
             
-            <div class="bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-2 items-center justify-between border-l-4 border-green-500">
-                <div class="text-sm text-gray-600">
-                    <span class="font-bold block text-gray-800">Sistem Import Cerdas:</span>
-                    Anda bisa memilih metode "Replace Total" atau "Modify (Update & Tambah)".
-                </div>
+            <div class="admin-only hidden bg-white p-4 rounded shadow mb-6 flex flex-wrap gap-2 items-center justify-between border-l-4 border-green-500">
+                <div class="text-sm text-gray-600"><span class="font-bold block text-gray-800">Sistem Import Cerdas:</span>Pilih "Replace Total" atau "Modify (Update & Tambah)".</div>
                 <div class="flex gap-2">
                     <button onclick="downloadTemplateBahanBaku()" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-semibold hover:bg-gray-300">1. Unduh Template</button>
                     <button onclick="document.getElementById('import-bb-file').click()" class="bg-green-600 text-white px-3 py-2 rounded text-xs font-semibold hover:bg-green-700">2. Import Excel</button>
@@ -70,13 +65,13 @@
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded shadow mb-6">
+            <div class="admin-only hidden bg-white p-6 rounded shadow mb-6">
                 <h3 class="text-lg font-semibold mb-4 border-b pb-2">Tambah Bahan Baku Baru</h3>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div class="md:col-span-1"><label class="block text-xs font-semibold text-gray-600 mb-1">Nama Bahan</label><input type="text" id="bb-nama" placeholder="ex: Susu UHT" class="w-full p-2 border rounded text-sm"></div>
                     <div><label class="block text-xs font-semibold text-gray-600 mb-1">Satuan Beli</label><input type="text" id="bb-satuan-beli" placeholder="ex: Karton" class="w-full p-2 border rounded text-sm"></div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Beli (Total)</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Harga Beli</label>
                         <div class="flex shadow-sm rounded-md">
                             <span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span>
                             <input type="text" id="bb-harga-beli" placeholder="240.000" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md text-sm" oninput="formatRupiahInput(this); kalkulasiHargaSatuBB('baru')">
@@ -86,7 +81,7 @@
                     <div><label class="block text-xs font-semibold text-gray-600 mb-1">Satuan Resep</label><input type="text" id="bb-satuan-resep" placeholder="ex: ml" class="w-full p-2 border rounded text-sm" oninput="kalkulasiHargaSatuBB('baru')"></div>
                 </div>
                 <div class="mt-4 bg-blue-50 p-3 rounded flex justify-between items-center border border-blue-200">
-                    <div class="text-sm text-blue-800">Harga Dasar Untuk Resep: <span id="bb-harga-final" class="font-bold text-xl ml-2">Rp 0 / -</span></div>
+                    <div class="text-sm text-blue-800">Harga Dasar: <span id="bb-harga-final" class="font-bold text-xl ml-2">Rp 0 / -</span></div>
                     <button onclick="tambahBahanBaku()" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-bold shadow">Simpan Bahan</button>
                 </div>
             </div>
@@ -94,56 +89,37 @@
             <div class="bg-white p-6 rounded shadow mb-6">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                     <div class="flex items-center gap-2 w-full md:w-1/3">
-                        <span class="text-gray-500 font-bold text-lg">🔍</span>
-                        <input type="text" id="search-bb" placeholder="Cari nama bahan baku..." class="w-full p-2 border rounded text-sm bg-gray-50 focus:bg-white" oninput="updatePaginationBB()">
+                        <span class="text-gray-500 font-bold text-lg">🔍</span><input type="text" id="search-bb" placeholder="Cari nama bahan baku..." class="w-full p-2 border rounded text-sm bg-gray-50 focus:bg-white" oninput="updatePaginationBB()">
                     </div>
                     <div class="flex items-center gap-2 text-sm text-gray-600">
-                        <label>Tampilkan:</label>
-                        <select id="bb-per-page" class="border p-1 rounded" onchange="updatePaginationBB()">
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="all">Semua</option>
-                        </select>
-                        <span>baris</span>
+                        <label>Tampilkan:</label><select id="bb-per-page" class="border p-1 rounded" onchange="updatePaginationBB()"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="all">Semua</option></select><span>baris</span>
                     </div>
                 </div>
-
                 <div class="overflow-x-auto min-h-[300px]">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="border-b text-gray-700 bg-gray-50">
-                                <th class="p-3">Nama Bahan</th>
-                                <th class="p-3 text-center border-l border-r bg-gray-100" colspan="2">INFO PEMBELIAN</th>
-                                <th class="p-3 text-center" colspan="2">INFO RESEP (YIELD)</th>
-                                <th class="p-3 text-center w-12">Aksi</th>
+                                <th class="p-3">Nama Bahan</th><th class="p-3 text-center border-l border-r bg-gray-100" colspan="2">INFO PEMBELIAN</th><th class="p-3 text-center" colspan="2">INFO RESEP (YIELD)</th><th class="p-3 text-center w-12 admin-only hidden">Aksi</th>
                             </tr>
                             <tr class="border-b text-gray-500 text-xs">
-                                <th class="p-2"></th>
-                                <th class="p-2 border-l bg-gray-100">Beli per...</th>
-                                <th class="p-2 border-r bg-gray-100">Harga Beli</th>
-                                <th class="p-2">Nilai Konversi</th>
-                                <th class="p-2">Harga per Satuan</th>
-                                <th class="p-2"></th>
+                                <th class="p-2"></th><th class="p-2 border-l bg-gray-100">Beli per...</th><th class="p-2 border-r bg-gray-100">Harga Beli</th><th class="p-2">Nilai Konversi</th><th class="p-2">Harga per Satuan</th><th class="p-2 admin-only hidden"></th>
                             </tr>
                         </thead>
                         <tbody id="table-bahan-baku"></tbody>
                     </table>
                 </div>
                 <div class="flex justify-between items-center mt-4 pt-4 border-t text-sm">
-                    <div id="bb-info-halaman" class="text-gray-600">Menampilkan 0 dari 0 data</div>
-                    <div class="flex gap-1" id="bb-pagination-controls"></div>
+                    <div id="bb-info-halaman" class="text-gray-600">Menampilkan 0 dari 0 data</div><div class="flex gap-1" id="bb-pagination-controls"></div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: INPUT RESEP BARU -->
-        <div id="tab-input-hpp" class="tab-content">
+        <div id="tab-input-hpp" class="tab-content admin-only">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Kalkulator & Input Menu Baru</h2>
                 <div class="flex gap-2">
                     <button onclick="downloadTemplateResep()" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-semibold hover:bg-gray-300">Unduh Template</button>
-                    <button onclick="document.getElementById('import-resep-file').click()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-green-700">Import Massal Resep</button>
+                    <button onclick="document.getElementById('import-resep-file').click()" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-green-700">Import Massal</button>
                     <input type="file" id="import-resep-file" accept=".xlsx, .xls" class="hidden" onchange="initiateImport(event, 'resep')">
                 </div>
             </div>
@@ -158,7 +134,7 @@
                             <div class="w-1/2"><label class="block text-sm font-medium text-gray-700 mb-1">Sub-Kategori</label><input type="text" id="r-sub" placeholder="ex: Chocolate" class="w-full p-2 border rounded"></div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Harga Jual / Target Harga</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Harga Jual Target</label>
                             <div class="flex shadow-sm rounded-md">
                                 <span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span>
                                 <input type="text" id="r-harga-jual" placeholder="28.000" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md" oninput="formatRupiahInput(this)">
@@ -169,15 +145,10 @@
 
                 <div class="bg-white p-6 rounded shadow overflow-visible">
                     <h3 class="font-semibold mb-4 text-lg border-b pb-2 text-blue-600">Komposisi Resep</h3>
-                    
-                    <!-- Fitur Baru: Autocomplete Searchable Input -->
                     <div class="flex gap-2 mb-4 relative bb-autocomplete z-20">
                         <div class="relative w-full flex-1">
-                            <input type="hidden" id="r-bb-selected-id">
-                            <input type="hidden" id="r-bb-selected-nama">
-                            <input type="hidden" id="r-bb-selected-harga">
-                            <input type="hidden" id="r-bb-selected-satuan">
-                            <input type="text" id="r-pilih-bb" placeholder="Ketik & cari nama bahan..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" onfocus="bukaDropdownBB('baru')" oninput="filterDropdownBB('baru')" autocomplete="off">
+                            <input type="hidden" id="r-bb-selected-id"><input type="hidden" id="r-bb-selected-nama"><input type="hidden" id="r-bb-selected-harga"><input type="hidden" id="r-bb-selected-satuan">
+                            <input type="text" id="r-pilih-bb" placeholder="Cari nama bahan..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" onfocus="bukaDropdownBB('baru')" oninput="filterDropdownBB('baru')" autocomplete="off">
                             <ul id="r-dropdown-list" class="absolute left-0 right-0 z-50 w-full bg-white border border-gray-300 rounded shadow-2xl max-h-48 overflow-y-auto hidden mt-1 custom-scrollbar"></ul>
                         </div>
                         <input type="number" id="r-qty-bb" placeholder="Qty" class="w-1/4 p-2 border rounded text-sm">
@@ -189,10 +160,10 @@
                         <tbody id="temp-komposisi-list"></tbody>
                     </table>
                     <div class="bg-gray-50 p-4 rounded text-sm space-y-1 mb-4 border">
-                        <div class="flex justify-between"><span>Total Cost (HPP):</span> <span id="r-total-cost" class="font-bold text-red-600">Rp 0</span></div>
+                        <div class="flex justify-between"><span>Total HPP:</span> <span id="r-total-cost" class="font-bold text-red-600">Rp 0</span></div>
                         <div class="flex justify-between"><span>Harga Jual:</span> <span id="r-target-jual" class="font-bold text-blue-600">Rp 0</span></div>
-                        <div class="flex justify-between border-t pt-1 mt-1"><span>Persentase HPP:</span> <span id="r-persentase" class="font-bold">0%</span></div>
-                        <div class="flex justify-between"><span>Margin Profit:</span> <span id="r-margin" class="font-bold text-green-600">Rp 0</span></div>
+                        <div class="flex justify-between border-t pt-1 mt-1"><span>% HPP:</span> <span id="r-persentase" class="font-bold">0%</span></div>
+                        <div class="flex justify-between"><span>Margin:</span> <span id="r-margin" class="font-bold text-green-600">Rp 0</span></div>
                     </div>
                     <button onclick="simpanResepFinal()" class="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 shadow">Simpan Resep ke Database</button>
                 </div>
@@ -201,119 +172,50 @@
 
     </div>
 
-    <!-- MODAL POP-UP: OPSI IMPORT -->
+    <div id="modal-login" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm p-6 relative modal-enter text-center">
+            <button onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
+            <div class="text-4xl mb-2">🔒</div>
+            <h3 class="text-xl font-bold mb-1 text-gray-800">Admin Login</h3>
+            <p class="text-xs text-gray-500 mb-6">Akses kontrol manajerial penuh.</p>
+            
+            <div class="space-y-4 text-left">
+                <div><label class="block text-sm font-semibold text-gray-600 mb-1">Email</label><input type="email" id="login-email" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 outline-none"></div>
+                <div><label class="block text-sm font-semibold text-gray-600 mb-1">Password</label><input type="password" id="login-password" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400 outline-none"></div>
+            </div>
+            <button id="btn-submit-login" onclick="loginAdmin()" class="mt-6 w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 shadow">Masuk</button>
+        </div>
+    </div>
+
     <div id="modal-import-option" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-md p-6 relative modal-enter text-center">
-            <button onclick="batalImport()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
-            <div class="text-4xl mb-4">⚠️</div>
-            <h3 class="text-xl font-bold mb-2 text-gray-800">Pilih Mode Import</h3>
-            <p class="text-sm text-gray-600 mb-6">Bagaimana Anda ingin sistem memproses file Excel yang diunggah?</p>
-            <div class="space-y-3">
-                <button onclick="jalankanImport('modify')" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 flex flex-col items-center">
-                    <span>🔄 Modify / Update (Aman)</span><span class="text-xs font-normal opacity-80 mt-1">Hanya memperbarui nama yang sama & menambah data baru.</span>
-                </button>
-                <button onclick="jalankanImport('replace')" class="w-full bg-red-600 text-white p-3 rounded-lg font-bold hover:bg-red-700 flex flex-col items-center">
-                    <span>🗑️ Replace Total (Hati-hati)</span><span class="text-xs font-normal opacity-80 mt-1">Menghapus SELURUH database saat ini, diganti full dengan Excel.</span>
-                </button>
-            </div>
-            <button onclick="batalImport()" class="mt-4 text-sm text-gray-500 hover:text-gray-800 font-semibold underline">Batal</button>
+            <button onclick="batalImport()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button><div class="text-4xl mb-4">⚠️</div><h3 class="text-xl font-bold mb-2 text-gray-800">Pilih Mode Import</h3><p class="text-sm text-gray-600 mb-6">Bagaimana Anda ingin sistem memproses file Excel yang diunggah?</p>
+            <div class="space-y-3"><button onclick="jalankanImport('modify')" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 flex flex-col items-center"><span>🔄 Modify / Update (Aman)</span><span class="text-xs font-normal opacity-80 mt-1">Memperbarui nama yang sama & menambah data baru.</span></button><button onclick="jalankanImport('replace')" class="w-full bg-red-600 text-white p-3 rounded-lg font-bold hover:bg-red-700 flex flex-col items-center"><span>🗑️ Replace Total (Hati-hati)</span><span class="text-xs font-normal opacity-80 mt-1">Hapus SELURUH database, ganti full dengan Excel.</span></button></div>
         </div>
     </div>
-
-    <!-- MODAL POP-UP: EDIT BAHAN BAKU -->
     <div id="modal-edit-bb" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-xl p-6 relative modal-enter">
-            <button onclick="closeModal('modal-edit-bb')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
-            <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Edit Bahan Baku</h3>
-            <input type="hidden" id="edit-bb-id">
-            <div class="space-y-4">
-                <div><label class="block text-sm font-semibold text-gray-600">Nama Bahan</label><input type="text" id="edit-bb-nama" class="w-full p-2 border rounded mt-1"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-semibold text-gray-600">Satuan Beli</label><input type="text" id="edit-bb-satuan-beli" class="w-full p-2 border rounded mt-1"></div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-600 mb-1">Harga Beli</label>
-                        <div class="flex shadow-sm rounded-md">
-                            <span class="inline-flex items-center px-2 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span>
-                            <input type="text" id="edit-bb-harga-beli" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md text-sm" oninput="formatRupiahInput(this); kalkulasiHargaSatuBB('edit')">
-                        </div>
-                    </div>
-                    <div><label class="block text-sm font-semibold text-gray-600">Nilai Konversi</label><input type="number" id="edit-bb-konversi" class="w-full p-2 border rounded mt-1" oninput="kalkulasiHargaSatuBB('edit')"></div>
-                    <div><label class="block text-sm font-semibold text-gray-600">Satuan Resep</label><input type="text" id="edit-bb-satuan-resep" class="w-full p-2 border rounded mt-1" oninput="kalkulasiHargaSatuBB('edit')"></div>
-                </div>
-            </div>
-            <div class="mt-4 bg-yellow-50 p-3 rounded flex justify-between items-center border border-yellow-200">
-                <div class="text-sm text-yellow-800">Harga Baru Resep: <span id="edit-bb-harga-final" class="font-bold text-lg ml-2">Rp 0 / -</span></div>
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="closeModal('modal-edit-bb')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-300">Batal</button>
-                <button onclick="simpanEditBahanBaku()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow">Simpan Perubahan</button>
-            </div>
+            <button onclick="closeModal('modal-edit-bb')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button><h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Edit Bahan Baku</h3><input type="hidden" id="edit-bb-id">
+            <div class="space-y-4"><div><label class="block text-sm font-semibold text-gray-600">Nama Bahan</label><input type="text" id="edit-bb-nama" class="w-full p-2 border rounded mt-1"></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-semibold text-gray-600">Satuan Beli</label><input type="text" id="edit-bb-satuan-beli" class="w-full p-2 border rounded mt-1"></div><div><label class="block text-sm font-semibold text-gray-600 mb-1">Harga Beli</label><div class="flex shadow-sm rounded-md"><span class="inline-flex items-center px-2 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span><input type="text" id="edit-bb-harga-beli" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md text-sm" oninput="formatRupiahInput(this); kalkulasiHargaSatuBB('edit')"></div></div><div><label class="block text-sm font-semibold text-gray-600">Nilai Konversi</label><input type="number" id="edit-bb-konversi" class="w-full p-2 border rounded mt-1" oninput="kalkulasiHargaSatuBB('edit')"></div><div><label class="block text-sm font-semibold text-gray-600">Satuan Resep</label><input type="text" id="edit-bb-satuan-resep" class="w-full p-2 border rounded mt-1" oninput="kalkulasiHargaSatuBB('edit')"></div></div></div>
+            <div class="mt-4 bg-yellow-50 p-3 rounded flex justify-between items-center border border-yellow-200"><div class="text-sm text-yellow-800">Harga Baru Resep: <span id="edit-bb-harga-final" class="font-bold text-lg ml-2">Rp 0 / -</span></div></div>
+            <div class="mt-6 flex justify-end gap-3"><button onclick="closeModal('modal-edit-bb')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded font-semibold hover:bg-gray-300">Batal</button><button onclick="simpanEditBahanBaku()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow">Simpan</button></div>
         </div>
     </div>
-
-    <!-- MODAL POP-UP: EDIT RESEP & HPP -->
     <div id="modal-edit-resep" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-gray-100 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-visible p-6 relative modal-enter">
-            <button onclick="closeModal('modal-edit-resep')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl z-10">✕</button>
-            <h3 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2 border-gray-300">Edit Resep Menu</h3>
-            <input type="hidden" id="edit-r-id">
+            <button onclick="closeModal('modal-edit-resep')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl z-10">✕</button><h3 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2 border-gray-300">Edit Resep Menu</h3><input type="hidden" id="edit-r-id">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded shadow-sm border">
-                    <h4 class="font-semibold text-blue-600 mb-3 border-b pb-1">Data Utama</h4>
-                    <div class="space-y-3">
-                        <div><label class="block text-sm text-gray-600">Nama Menu</label><input type="text" id="edit-r-nama" class="w-full p-2 border rounded mt-1"></div>
-                        <div class="flex gap-3">
-                            <div class="w-1/2"><label class="block text-sm text-gray-600">Kategori</label><input type="text" id="edit-r-kategori" class="w-full p-2 border rounded mt-1"></div>
-                            <div class="w-1/2"><label class="block text-sm text-gray-600">Sub-Kategori</label><input type="text" id="edit-r-sub" class="w-full p-2 border rounded mt-1"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-600 mb-1">Harga Jual (Rp)</label>
-                            <div class="flex shadow-sm rounded-md">
-                                <span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span>
-                                <input type="text" id="edit-r-harga-jual" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md" oninput="formatRupiahInput(this)">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded shadow-sm border overflow-visible">
-                    <h4 class="font-semibold text-blue-600 mb-3 border-b pb-1">Komposisi</h4>
-                    
-                    <!-- Fitur Baru: Autocomplete Searchable Input di Form Edit -->
-                    <div class="flex gap-2 mb-3 relative bb-autocomplete z-20">
-                        <div class="relative w-full flex-1">
-                            <input type="hidden" id="edit-r-bb-selected-id">
-                            <input type="hidden" id="edit-r-bb-selected-nama">
-                            <input type="hidden" id="edit-r-bb-selected-harga">
-                            <input type="hidden" id="edit-r-bb-selected-satuan">
-                            <input type="text" id="edit-r-pilih-bb" placeholder="Ketik & cari nama bahan..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" onfocus="bukaDropdownBB('edit')" oninput="filterDropdownBB('edit')" autocomplete="off">
-                            <ul id="edit-r-dropdown-list" class="absolute left-0 right-0 z-50 w-full bg-white border border-gray-300 rounded shadow-2xl max-h-48 overflow-y-auto hidden mt-1 custom-scrollbar"></ul>
-                        </div>
-                        <input type="number" id="edit-r-qty-bb" placeholder="Qty" class="w-1/4 p-2 border rounded text-sm">
-                        <button onclick="addTempKomposisi('edit')" class="bg-green-600 text-white px-3 rounded hover:bg-green-700 font-bold">+</button>
-                    </div>
-
-                    <div class="max-h-32 overflow-y-auto mb-3 border rounded">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-gray-50 sticky top-0"><tr class="border-b text-gray-500"><th class="p-2">Bahan</th><th class="p-2">Qty</th><th class="p-2">Subtotal</th><th class="p-2 text-center">Aksi</th></tr></thead>
-                            <tbody id="edit-temp-komposisi-list"></tbody>
-                        </table>
-                    </div>
-                    <div class="bg-blue-50 p-3 rounded text-sm space-y-1">
-                        <div class="flex justify-between text-gray-600">Total HPP: <span id="edit-r-total-cost" class="font-bold text-red-600">Rp 0</span></div>
-                        <div class="flex justify-between border-t border-blue-100 pt-1 mt-1 text-gray-600">Margin: <span id="edit-r-margin" class="font-bold text-green-600">Rp 0</span></div>
-                        <div class="flex justify-between text-gray-600">% HPP: <span id="edit-r-persentase" class="font-bold">0%</span></div>
-                    </div>
+                <div class="bg-white p-5 rounded shadow-sm border"><h4 class="font-semibold text-blue-600 mb-3 border-b pb-1">Data Utama</h4><div class="space-y-3"><div><label class="block text-sm text-gray-600">Nama Menu</label><input type="text" id="edit-r-nama" class="w-full p-2 border rounded mt-1"></div><div class="flex gap-3"><div class="w-1/2"><label class="block text-sm text-gray-600">Kategori</label><input type="text" id="edit-r-kategori" class="w-full p-2 border rounded mt-1"></div><div class="w-1/2"><label class="block text-sm text-gray-600">Sub-Kategori</label><input type="text" id="edit-r-sub" class="w-full p-2 border rounded mt-1"></div></div><div><label class="block text-sm text-gray-600 mb-1">Harga Jual (Rp)</label><div class="flex shadow-sm rounded-md"><span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md font-bold">Rp</span><input type="text" id="edit-r-harga-jual" class="flex-1 w-full p-2 border border-gray-300 rounded-r-md" oninput="formatRupiahInput(this)"></div></div></div></div>
+                <div class="bg-white p-5 rounded shadow-sm border overflow-visible"><h4 class="font-semibold text-blue-600 mb-3 border-b pb-1">Komposisi</h4>
+                    <div class="flex gap-2 mb-3 relative bb-autocomplete z-20"><div class="relative w-full flex-1"><input type="hidden" id="edit-r-bb-selected-id"><input type="hidden" id="edit-r-bb-selected-nama"><input type="hidden" id="edit-r-bb-selected-harga"><input type="hidden" id="edit-r-bb-selected-satuan"><input type="text" id="edit-r-pilih-bb" placeholder="Cari nama bahan..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-300 outline-none" onfocus="bukaDropdownBB('edit')" oninput="filterDropdownBB('edit')" autocomplete="off"><ul id="edit-r-dropdown-list" class="absolute left-0 right-0 z-50 w-full bg-white border border-gray-300 rounded shadow-2xl max-h-48 overflow-y-auto hidden mt-1 custom-scrollbar"></ul></div><input type="number" id="edit-r-qty-bb" placeholder="Qty" class="w-1/4 p-2 border rounded text-sm"><button onclick="addTempKomposisi('edit')" class="bg-green-600 text-white px-3 rounded hover:bg-green-700 font-bold">+</button></div>
+                    <div class="max-h-32 overflow-y-auto mb-3 border rounded"><table class="w-full text-left text-sm"><thead class="bg-gray-50 sticky top-0"><tr class="border-b text-gray-500"><th class="p-2">Bahan</th><th class="p-2">Qty</th><th class="p-2">Subtotal</th><th class="p-2 text-center">Aksi</th></tr></thead><tbody id="edit-temp-komposisi-list"></tbody></table></div>
+                    <div class="bg-blue-50 p-3 rounded text-sm space-y-1"><div class="flex justify-between text-gray-600">Total HPP: <span id="edit-r-total-cost" class="font-bold text-red-600">Rp 0</span></div><div class="flex justify-between border-t border-blue-100 pt-1 mt-1 text-gray-600">Margin: <span id="edit-r-margin" class="font-bold text-green-600">Rp 0</span></div><div class="flex justify-between text-gray-600">% HPP: <span id="edit-r-persentase" class="font-bold">0%</span></div></div>
                 </div>
             </div>
-            <div class="mt-6 flex justify-end gap-3 border-t border-gray-300 pt-4">
-                <button onclick="closeModal('modal-edit-resep')" class="bg-gray-300 text-gray-700 px-5 py-2 rounded font-semibold hover:bg-gray-400">Batal</button>
-                <button onclick="simpanEditResep()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow">Update & Simpan Resep</button>
-            </div>
+            <div class="mt-6 flex justify-end gap-3 border-t border-gray-300 pt-4"><button onclick="closeModal('modal-edit-resep')" class="bg-gray-300 text-gray-700 px-5 py-2 rounded font-semibold hover:bg-gray-400">Batal</button><button onclick="simpanEditResep()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 shadow">Update Resep</button></div>
         </div>
     </div>
 
-    <!-- SCRIPT UTAMA -->
     <script>
         const SUPABASE_URL = 'https://mslsgobvzzxxkwfvpjhx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbHNnb2J2enp4eGt3ZnZwamh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzAzMDEsImV4cCI6MjA5NzgwNjMwMX0.V7pUmC3En3O0pc3VamJUm9eq7cnB7UFLi333LmtnJqQ';
@@ -322,22 +224,77 @@
         let bahanBakuList = [], tempKomposisiBaru = [], tempKomposisiEdit = []; 
         let fileImportTertunda = null, jenisImportTertunda = '';
         let bbCurrentPage = 1, bbItemsPerPage = 10;
+        let adminAktif = null;
 
         const formatRp = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(angka);
-        
-        function formatRupiahInput(element) {
-            let val = element.value.replace(/[^,\d]/g, '').toString();
-            let split = val.split(',');
-            let sisa = split[0].length % 3;
-            let rupiah = split[0].substr(0, sisa);
-            let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-            if(ribuan) { let separator = sisa ? '.' : ''; rupiah += separator + ribuan.join('.'); }
-            rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-            element.value = rupiah;
+        function formatRupiahInput(element) { let val = element.value.replace(/[^,\d]/g, '').toString(); let split = val.split(','); let sisa = split[0].length % 3; let rupiah = split[0].substr(0, sisa); let ribuan = split[0].substr(sisa).match(/\d{3}/gi); if(ribuan) { let separator = sisa ? '.' : ''; rupiah += separator + ribuan.join('.'); } rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah; element.value = rupiah; }
+        function getNilaiAsli(stringInput) { return parseFloat(String(stringInput).replace(/[^0-9]/g, '')) || 0; }
+        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+
+        // ================= AUTHENTICATION LOGIC =================
+        async function inisialisasiAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            adminAktif = session?.user || null;
+            renderAuthUI();
+
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                adminAktif = session?.user || null;
+                renderAuthUI();
+            });
         }
 
-        function getNilaiAsli(stringInput) { return parseFloat(String(stringInput).replace(/[^0-9]/g, '')) || 0; }
+        function renderAuthUI() {
+            const elAdmins = document.querySelectorAll('.admin-only');
+            const btnLogin = document.getElementById('btn-login');
+            const btnLogout = document.getElementById('btn-logout');
+            const userStatus = document.getElementById('user-status');
 
+            if (adminAktif) {
+                elAdmins.forEach(el => el.classList.remove('hidden'));
+                btnLogin.classList.add('hidden');
+                btnLogout.classList.remove('hidden');
+                userStatus.innerHTML = "🌟 Admin Area";
+                userStatus.classList.replace('text-gray-500', 'text-green-600');
+            } else {
+                elAdmins.forEach(el => el.classList.add('hidden'));
+                btnLogin.classList.remove('hidden');
+                btnLogout.classList.add('hidden');
+                userStatus.innerHTML = "👤 Guest (View Only)";
+                userStatus.classList.replace('text-green-600', 'text-gray-500');
+                
+                // Pindah paksa ke tab direktori jika Guest sedang di tab Input
+                if(document.getElementById('tab-input-hpp').classList.contains('active')) {
+                    switchTab('tab-direktori');
+                }
+            }
+        }
+
+        async function loginAdmin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('btn-submit-login');
+            
+            if(!email || !password) return alert("Masukkan email dan password!");
+            btn.innerText = "Memverifikasi...";
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            btn.innerText = "Masuk";
+            if(error) alert("Gagal Login: " + error.message);
+            else {
+                closeModal('modal-login');
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-password').value = '';
+                alert("Berhasil masuk sebagai Admin!");
+            }
+        }
+
+        async function logoutAdmin() {
+            await supabaseClient.auth.signOut();
+            alert("Anda telah keluar dari mode Admin.");
+        }
+
+        // ================= TAB LOGIC & EVENT LISTENER =================
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.btn-tab').forEach(el => el.classList.remove('active'));
@@ -349,24 +306,16 @@
             if(tabId === 'tab-direktori') loadDirektori();
         }
 
-        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
-        
-        // Deteksi klik di luar untuk kebab menu dan dropdown auto-select
         window.addEventListener('click', function(e) { 
-            if (!e.target.matches('.kebab-btn')) { 
-                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); 
-            } 
+            if (!e.target.matches('.kebab-btn')) { document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); } 
             if (!e.target.closest('.bb-autocomplete')) {
-                const d1 = document.getElementById('r-dropdown-list');
-                const d2 = document.getElementById('edit-r-dropdown-list');
-                if(d1) d1.classList.add('hidden');
-                if(d2) d2.classList.add('hidden');
+                const d1 = document.getElementById('r-dropdown-list'); const d2 = document.getElementById('edit-r-dropdown-list');
+                if(d1) d1.classList.add('hidden'); if(d2) d2.classList.add('hidden');
             }
         });
-        
         function toggleKebabMenu(event, menuId) { event.stopPropagation(); const targetMenu = document.getElementById(menuId); const isHidden = targetMenu.classList.contains('hidden'); document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); if (isHidden) targetMenu.classList.remove('hidden'); }
 
-        // ================= BAHAN BAKU (Tabel) =================
+        // ================= BAHAN BAKU =================
         function kalkulasiHargaSatuBB(mode) {
             const prefix = mode === 'edit' ? 'edit-bb-' : 'bb-';
             const hrgBeli = getNilaiAsli(document.getElementById(prefix+'harga-beli').value);
@@ -400,7 +349,8 @@
                             <td class="p-2 font-medium truncate max-w-xs">${item.nama}</td><td class="p-2 border-l bg-gray-50 text-gray-600">${item.satuan_beli || '-'}</td>
                             <td class="p-2 border-r bg-gray-50 font-medium">${item.harga_beli ? formatRp(item.harga_beli) : '-'}</td>
                             <td class="p-2 text-gray-600">${item.nilai_konversi || 1} ${item.satuan}</td><td class="p-2 text-blue-600 font-bold">${formatRp(item.harga)} <span class="text-xs text-gray-400">/ ${item.satuan}</span></td>
-                            <td class="p-2 text-center"><button onclick="toggleKebabMenu(event, 'drop-bb-${item.id}')" class="kebab-btn hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full font-bold">⋮</button>
+                            <td class="p-2 text-center admin-only ${adminAktif ? '' : 'hidden'}">
+                                <button onclick="toggleKebabMenu(event, 'drop-bb-${item.id}')" class="kebab-btn hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full font-bold">⋮</button>
                                 <div id="drop-bb-${item.id}" class="dropdown-menu hidden absolute right-10 mt-1 bg-white shadow-lg rounded border w-32 py-1 z-20">
                                     <button onclick="bukaModalEditBB(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
                                     <button onclick="aksiHapusBahanBaku(${item.id}, '${item.nama}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-red-600">🗑️ Hapus</button>
@@ -424,6 +374,7 @@
                 btnHTML += `<button onclick="ubahHalamanBB(${Math.min(totalPages, bbCurrentPage + 1)})" class="px-2 py-1 border rounded hover:bg-gray-100 ${bbCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">Next</button>`;
             }
             document.getElementById('bb-pagination-controls').innerHTML = btnHTML;
+            renderAuthUI(); // Paksa sembunyikan kolom jika guest
         }
 
         async function tambahBahanBaku() {
@@ -456,88 +407,35 @@
             if(error) alert("Gagal!"); else { closeModal('modal-edit-bb'); loadBahanBaku(); if(document.getElementById('tab-direktori').classList.contains('active')) loadDirektori(); }
         }
 
-        // ================= AUTOCOMPLETE SELECT BAHAN BAKU =================
+        // ================= AUTOCOMPLETE =================
         async function loadDropdownBahanBaku(targetElement) {
-            const { data } = await supabaseClient.from('bahan_baku').select('*').order('nama');
-            bahanBakuList = data || [];
-            
-            const prefix = targetElement === 'edit' ? 'edit-r-' : 'r-';
-            const ul = document.getElementById(prefix + 'dropdown-list');
-            ul.innerHTML = '';
-            
-            if(bahanBakuList.length === 0) {
-                ul.innerHTML = '<li class="p-3 text-gray-400 text-sm italic">Belum ada bahan baku di database</li>';
-            } else {
-                bahanBakuList.forEach(bb => {
-                    ul.innerHTML += `
-                        <li class="p-3 border-b cursor-pointer hover:bg-blue-50 text-sm bb-item flex justify-between items-center transition-colors" 
-                            onclick="pilihBahanBaku('${targetElement}', '${bb.id}', '${bb.nama.replace(/'/g, "\\'")}', ${bb.harga}, '${bb.satuan}')">
-                            <div class="font-semibold text-gray-800">${bb.nama}</div>
-                            <div class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">${formatRp(bb.harga)} / ${bb.satuan}</div>
-                        </li>`;
-                });
-            }
+            const { data } = await supabaseClient.from('bahan_baku').select('*').order('nama'); bahanBakuList = data || [];
+            const prefix = targetElement === 'edit' ? 'edit-r-' : 'r-'; const ul = document.getElementById(prefix + 'dropdown-list'); ul.innerHTML = '';
+            if(bahanBakuList.length === 0) { ul.innerHTML = '<li class="p-3 text-gray-400 text-sm italic">Belum ada bahan</li>'; } 
+            else { bahanBakuList.forEach(bb => { ul.innerHTML += `<li class="p-3 border-b cursor-pointer hover:bg-blue-50 text-sm bb-item flex justify-between items-center" onclick="pilihBahanBaku('${targetElement}', '${bb.id}', '${bb.nama.replace(/'/g, "\\'")}', ${bb.harga}, '${bb.satuan}')"><div class="font-semibold text-gray-800">${bb.nama}</div><div class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">${formatRp(bb.harga)} / ${bb.satuan}</div></li>`; }); }
         }
 
-        function bukaDropdownBB(mode) {
-            const prefix = mode === 'edit' ? 'edit-r-' : 'r-';
-            document.getElementById(prefix + 'dropdown-list').classList.remove('hidden');
-            filterDropdownBB(mode); // langsung filter jika ada isinya
-        }
-
+        function bukaDropdownBB(mode) { const prefix = mode === 'edit' ? 'edit-r-' : 'r-'; document.getElementById(prefix + 'dropdown-list').classList.remove('hidden'); filterDropdownBB(mode); }
         function filterDropdownBB(mode) {
-            const prefix = mode === 'edit' ? 'edit-r-' : 'r-';
-            const inputVal = document.getElementById(prefix + 'pilih-bb').value.toLowerCase();
-            const ul = document.getElementById(prefix + 'dropdown-list');
-            const items = ul.getElementsByTagName('li');
-            
-            let hasVisible = false;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].classList.contains('bb-item')) {
-                    const txtValue = items[i].textContent || items[i].innerText;
-                    if (txtValue.toLowerCase().indexOf(inputVal) > -1) {
-                        items[i].style.display = "";
-                        hasVisible = true;
-                    } else {
-                        items[i].style.display = "none";
-                    }
-                }
-            }
+            const prefix = mode === 'edit' ? 'edit-r-' : 'r-'; const inputVal = document.getElementById(prefix + 'pilih-bb').value.toLowerCase();
+            const ul = document.getElementById(prefix + 'dropdown-list'); const items = ul.getElementsByTagName('li');
+            for (let i = 0; i < items.length; i++) { if (items[i].classList.contains('bb-item')) { const txt = items[i].textContent || items[i].innerText; items[i].style.display = txt.toLowerCase().indexOf(inputVal) > -1 ? "" : "none"; } }
         }
 
         function pilihBahanBaku(mode, id, nama, harga, satuan) {
             const prefix = mode === 'edit' ? 'edit-r-' : 'r-';
-            document.getElementById(prefix + 'pilih-bb').value = nama; 
-            document.getElementById(prefix + 'bb-selected-id').value = id;
-            document.getElementById(prefix + 'bb-selected-nama').value = nama;
-            document.getElementById(prefix + 'bb-selected-harga').value = harga;
-            document.getElementById(prefix + 'bb-selected-satuan').value = satuan;
-            
-            document.getElementById(prefix + 'dropdown-list').classList.add('hidden');
+            document.getElementById(prefix + 'pilih-bb').value = nama; document.getElementById(prefix + 'bb-selected-id').value = id; document.getElementById(prefix + 'bb-selected-nama').value = nama; document.getElementById(prefix + 'bb-selected-harga').value = harga; document.getElementById(prefix + 'bb-selected-satuan').value = satuan; document.getElementById(prefix + 'dropdown-list').classList.add('hidden');
         }
 
-        // ================= RESEP & KOMPOSISI =================
+        // ================= RESEP KOMPOSISI =================
         function addTempKomposisi(mode) {
             const prefix = mode === 'edit' ? 'edit-r-' : 'r-';
-            
-            const id = document.getElementById(prefix + 'bb-selected-id').value;
-            const nama = document.getElementById(prefix + 'bb-selected-nama').value;
-            const harga = parseFloat(document.getElementById(prefix + 'bb-selected-harga').value);
-            const satuan = document.getElementById(prefix + 'bb-selected-satuan').value;
-            const qty = parseFloat(document.getElementById(prefix + 'qty-bb').value);
-            
-            if(!id || !qty) return alert("Pilih bahan baku dari daftar Autocomplete (klik namanya) dan masukkan Qty!");
-
+            const id = document.getElementById(prefix + 'bb-selected-id').value; const nama = document.getElementById(prefix + 'bb-selected-nama').value; const harga = parseFloat(document.getElementById(prefix + 'bb-selected-harga').value); const satuan = document.getElementById(prefix + 'bb-selected-satuan').value; const qty = parseFloat(document.getElementById(prefix + 'qty-bb').value);
+            if(!id || !qty) return alert("Pilih bahan dari dropdown dan isi Qty!");
             const dataArr = mode === 'edit' ? tempKomposisiEdit : tempKomposisiBaru;
-            if(dataArr.some(item => item.bahan_baku_id == id)) return alert("Bahan ini sudah ada di daftar resep di bawah!");
-
+            if(dataArr.some(item => item.bahan_baku_id == id)) return alert("Bahan sudah masuk daftar!");
             dataArr.push({ bahan_baku_id: id, nama: nama, satuan: satuan, qty: qty, subtotal: harga * qty });
-            
-            // Reset input form
-            document.getElementById(prefix + 'pilih-bb').value = '';
-            document.getElementById(prefix + 'bb-selected-id').value = '';
-            document.getElementById(prefix + 'qty-bb').value = '';
-            
+            document.getElementById(prefix + 'pilih-bb').value = ''; document.getElementById(prefix + 'bb-selected-id').value = ''; document.getElementById(prefix + 'qty-bb').value = '';
             renderKomposisi(mode);
         }
 
@@ -570,7 +468,7 @@
             if(!detailErr) { alert("Berhasil!"); document.getElementById('r-nama').value = ''; document.getElementById('r-kategori').value = ''; document.getElementById('r-sub').value = ''; document.getElementById('r-harga-jual').value = ''; tempKomposisiBaru = []; renderKomposisi('baru'); switchTab('tab-direktori'); }
         }
 
-        // ================= DIREKTORI RESEP & GROUPING =================
+        // ================= DIREKTORI & GROUPING =================
         async function loadDirektori() {
             const { data, error } = await supabaseClient.from('resep').select(`id, nama, kategori, sub_kategori, harga_jual, resep_detail (qty, bahan_baku_id, bahan_baku (nama, satuan, harga))`);
             if(error) return;
@@ -586,55 +484,32 @@
                 return { ...menu, totalCost, margin: menu.harga_jual - totalCost, hppPersen: menu.harga_jual > 0 ? (totalCost / menu.harga_jual) * 100 : 0, komposisiHTML };
             });
 
-            // Filtering
             const searchKey = document.getElementById('search-resep').value.toLowerCase();
             if(searchKey) processedData = processedData.filter(m => m.nama.toLowerCase().includes(searchKey) || m.kategori.toLowerCase().includes(searchKey) || m.sub_kategori.toLowerCase().includes(searchKey));
 
-            // Sorting kartu individu di dalam grup
             const sortBy = document.getElementById('sort-resep').value;
             if(sortBy === 'nama') processedData.sort((a,b) => a.nama.localeCompare(b.nama));
             if(sortBy === 'hpp_asc') processedData.sort((a,b) => a.hppPersen - b.hppPersen);
             if(sortBy === 'hpp_desc') processedData.sort((a,b) => b.hppPersen - a.hppPersen);
 
-            const wrapper = document.getElementById('recipe-wrapper');
-            wrapper.innerHTML = '';
+            const wrapper = document.getElementById('recipe-wrapper'); wrapper.innerHTML = '';
+            if(processedData.length === 0) { wrapper.innerHTML = `<div class="w-full text-center py-10 text-gray-400">Belum ada resep.</div>`; return; }
 
-            if(processedData.length === 0) {
-                wrapper.innerHTML = `<div class="w-full text-center py-10 text-gray-400">Belum ada resep yang sesuai.</div>`;
-                return;
-            }
-
-            // GROUPING DATA
             const groupedData = {};
             processedData.forEach(menu => {
-                const kat = menu.kategori ? menu.kategori.toUpperCase() : 'UNCATEGORIZED';
-                const sub = menu.sub_kategori ? menu.sub_kategori : 'General';
-                if(!groupedData[kat]) groupedData[kat] = {};
-                if(!groupedData[kat][sub]) groupedData[kat][sub] = [];
-                groupedData[kat][sub].push(menu);
+                const kat = menu.kategori ? menu.kategori.toUpperCase() : 'UNCATEGORIZED'; const sub = menu.sub_kategori ? menu.sub_kategori : 'General';
+                if(!groupedData[kat]) groupedData[kat] = {}; if(!groupedData[kat][sub]) groupedData[kat][sub] = []; groupedData[kat][sub].push(menu);
             });
 
-            // RENDER HTML GROUPING
             Object.keys(groupedData).sort().forEach(kat => {
-                let html = `
-                    <div class="mb-10 w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                        <h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b-4 border-blue-500 inline-block pr-6 pb-2 tracking-wide">${kat}</h2>
-                `;
-
+                let html = `<div class="mb-10 w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100"><h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b-4 border-blue-500 inline-block pr-6 pb-2 tracking-wide">${kat}</h2>`;
                 Object.keys(groupedData[kat]).sort().forEach(sub => {
-                    html += `
-                        <div class="mb-8">
-                            <h3 class="text-lg font-bold text-gray-700 mb-4 ml-1 flex items-center">
-                                <span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-sm uppercase tracking-wider border border-blue-200">${sub}</span>
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    `;
-
+                    html += `<div class="mb-8"><h3 class="text-lg font-bold text-gray-700 mb-4 ml-1 flex items-center"><span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-sm uppercase tracking-wider border border-blue-200">${sub}</span></h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
                     groupedData[kat][sub].forEach(menu => {
                         let hppColor = menu.hppPersen > 35 ? 'text-red-600' : 'text-green-600';
                         html += `
                             <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 relative hover:shadow-lg transition-shadow">
-                                <div class="absolute top-3 right-3 z-10">
+                                <div class="absolute top-3 right-3 z-10 admin-only ${adminAktif ? '' : 'hidden'}">
                                     <button onclick="toggleKebabMenu(event, 'drop-r-${menu.id}')" class="kebab-btn bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full font-bold shadow">⋮</button>
                                     <div id="drop-r-${menu.id}" class="dropdown-menu hidden absolute right-0 mt-1 bg-white shadow-lg rounded border w-28 py-1 text-sm text-gray-700">
                                         <button onclick="bukaModalEditResep(${JSON.stringify(menu).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
@@ -642,8 +517,7 @@
                                     </div>
                                 </div>
                                 <div class="bg-gray-800 text-white p-4 pr-12"><h3 class="text-xl font-bold truncate">${menu.nama}</h3></div>
-                                <div class="p-4">
-                                    <ul class="space-y-1 mb-4 h-24 overflow-y-auto border-b pb-2">${menu.komposisiHTML || '<li class="text-xs text-gray-400">Tanpa komposisi</li>'}</ul>
+                                <div class="p-4"><ul class="space-y-1 mb-4 h-24 overflow-y-auto border-b pb-2">${menu.komposisiHTML || '<li class="text-xs text-gray-400">Tanpa komposisi</li>'}</ul>
                                     <div class="bg-gray-50 p-3 rounded text-sm space-y-1.5 border">
                                         <div class="flex justify-between"><span class="text-gray-500">Harga Target:</span><span class="font-bold text-gray-800">${formatRp(menu.harga_jual)}</span></div>
                                         <div class="flex justify-between"><span class="text-gray-500">Cost/HPP:</span><span class="font-bold text-red-600">${formatRp(menu.totalCost)}</span></div>
@@ -654,28 +528,20 @@
                             </div>
                         `;
                     });
-
-                    html += `</div></div>`; // Tutup Grid & Sub
+                    html += `</div></div>`;
                 });
-                
-                html += `</div>`; // Tutup Blok Kategori Utama
-                wrapper.innerHTML += html;
+                html += `</div>`; wrapper.innerHTML += html;
             });
+            renderAuthUI(); // Paksa sembunyikan tombol admin jika sedang logout
         }
 
         async function aksiHapusResep(id, nama) { if(confirm(`Yakin hapus resep "${nama}"?`)) { await supabaseClient.from('resep').delete().eq('id', id); loadDirektori(); } }
 
         async function bukaModalEditResep(menuObj) {
             await loadDropdownBahanBaku('edit');
-            
-            // Bersihkan field autocomplete bahan jika ada bekas ketikan
-            document.getElementById('edit-r-pilih-bb').value = ''; 
-            document.getElementById('edit-r-bb-selected-id').value = '';
-            document.getElementById('edit-r-qty-bb').value = '';
-
+            document.getElementById('edit-r-pilih-bb').value = ''; document.getElementById('edit-r-bb-selected-id').value = ''; document.getElementById('edit-r-qty-bb').value = '';
             document.getElementById('edit-r-id').value = menuObj.id; document.getElementById('edit-r-nama').value = menuObj.nama; document.getElementById('edit-r-kategori').value = menuObj.kategori; document.getElementById('edit-r-sub').value = menuObj.sub_kategori;
             document.getElementById('edit-r-harga-jual').value = menuObj.harga_jual.toString(); formatRupiahInput(document.getElementById('edit-r-harga-jual'));
-            
             tempKomposisiEdit = menuObj.resep_detail.map(det => { if(!det.bahan_baku) return null; return { bahan_baku_id: det.bahan_baku_id, nama: det.bahan_baku.nama, satuan: det.bahan_baku.satuan, qty: det.qty, subtotal: det.qty * det.bahan_baku.harga }; }).filter(item => item !== null);
             renderKomposisi('edit'); document.getElementById('modal-edit-resep').classList.remove('hidden');
         }
@@ -689,7 +555,7 @@
             alert("Resep diperbarui!"); closeModal('modal-edit-resep'); loadDirektori();
         }
 
-        // ================= EXCEL IMPORT (REPLACE / MODIFY) =================
+        // ================= IMPORT EXCEL =================
         function initiateImport(event, type) { fileImportTertunda = event.target.files[0]; if(!fileImportTertunda) return; jenisImportTertunda = type; document.getElementById('modal-import-option').classList.remove('hidden'); }
         function batalImport() { fileImportTertunda = null; jenisImportTertunda = ''; document.getElementById('import-bb-file').value = ''; document.getElementById('import-resep-file').value = ''; closeModal('modal-import-option'); }
         function jalankanImport(mode) { closeModal('modal-import-option'); if(jenisImportTertunda === 'bb') eksekusiImportBahanBaku(mode); else eksekusiImportResep(mode); }
@@ -702,11 +568,11 @@
             reader.onload = async (e) => {
                 const rows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).Sheets[XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).SheetNames[0]]);
                 const cleanData = rows.map(r => { const h=parseFloat(r["Harga Beli"]||0); const k=parseFloat(r["Nilai Konversi (Yield)"]||1); return { nama:String(r["Nama Bahan"]).trim(), satuan_beli:r["Satuan Beli"], harga_beli:h, nilai_konversi:k, satuan:r["Satuan Pemakaian Resep"], harga:h/k };}).filter(r=>r.nama && r.nama !== "undefined");
-                if(cleanData.length === 0) { alert("Data Excel kosong!"); batalImport(); return; }
+                if(cleanData.length === 0) { alert("Data kosong!"); batalImport(); return; }
 
                 if(mode === 'replace') {
                     const { error } = await supabaseClient.from('bahan_baku').delete().neq('id', 0);
-                    if(error && error.code === '23503') { alert("GAGAL: Bahan baku sedang dipakai di Resep. Gunakan mode 'Modify'."); batalImport(); return; }
+                    if(error && error.code === '23503') { alert("GAGAL: Bahan baku sedang dipakai di Resep."); batalImport(); return; }
                     await supabaseClient.from('bahan_baku').insert(cleanData); alert("Replace Total Berhasil!");
                 } else if (mode === 'modify') {
                     const { data: ext } = await supabaseClient.from('bahan_baku').select('*'); const nMap = {}; ext.forEach(i => nMap[i.nama.toLowerCase()] = i.id);
@@ -741,11 +607,15 @@
                     if(!rId) { const { data: nR } = await supabaseClient.from('resep').insert([{nama:grp[k].nama, kategori:grp[k].kategori, sub_kategori:grp[k].sub_kategori, harga_jual:grp[k].harga_jual}]).select(); if(nR) rId = nR[0].id; }
                     if(rId) await supabaseClient.from('resep_detail').insert(grp[k].ing.map(i => ({resep_id:rId, bahan_baku_id:i.bahan_baku_id, qty:i.qty})));
                 }
-                alert(mode === 'replace' ? "Resep berhasil ditimpa ulang!" : "Resep berhasil ditambahkan & diperbarui!"); batalImport(); loadDirektori();
+                alert(mode === 'replace' ? "Resep berhasil ditimpa ulang!" : "Resep ditambahkan & diperbarui!"); batalImport(); loadDirektori();
             }; reader.readAsArrayBuffer(fileImportTertunda);
         }
 
-        window.onload = () => loadDirektori();
+        // Initialize App & Cek Sesi Login Aktif
+        window.onload = () => {
+            inisialisasiAuth();
+            loadDirektori();
+        };
     </script>
 </body>
 </html>
