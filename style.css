@@ -9,25 +9,30 @@
     display: block; 
 }
 
-/* Tab Indikator Desktop */
+/* Tab Indikator Minimalis */
 .btn-tab {
     position: relative;
     padding-bottom: 0.5rem;
+    color: #6b7280; /* text-gray-500 */
+    transition: color 0.2s ease;
+}
+.btn-tab:hover {
+    color: #111827; /* text-gray-900 */
 }
 .btn-tab::after {
     content: '';
     position: absolute;
     width: 0;
-    height: 3px;
+    height: 2px;
     bottom: 0;
     left: 50%;
-    background-color: #2563eb; /* Tailwind blue-600 */
+    background-color: #111827; /* Garis bawah hitam minimalis */
     transition: all 0.3s ease;
     transform: translateX(-50%);
-    border-radius: 3px 3px 0 0;
 }
 .btn-tab.active { 
-    color: #2563eb; 
+    color: #111827; 
+    font-weight: 600;
 }
 .btn-tab.active::after {
     width: 100%;
@@ -35,7 +40,7 @@
 
 /* Keyframes */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -44,29 +49,30 @@
 }
 
 @keyframes modalFadeIn { 
-    from { opacity: 0; transform: scale(0.95); } 
+    from { opacity: 0; transform: scale(0.98); } 
     to { opacity: 1; transform: scale(1); } 
 }
 
-/* Custom Scrollbar Elegan */
+/* Custom Scrollbar Elegan & Tipis */
 .custom-scrollbar::-webkit-scrollbar { 
-    width: 6px; 
+    width: 4px; 
+    height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb { 
-    background: #cbd5e1; 
+    background: #e2e8f0; 
     border-radius: 10px; 
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-    background: #94a3b8; 
+    background: #cbd5e1; 
 }
 
-/* Animasi Spinner Loading Modern */
+/* Animasi Spinner Loading Minimalis (Hitam) */
 .loader {
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top: 4px solid #ffffff;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top: 3px solid #111827;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
     margin: 0 auto 16px auto;
 }
@@ -76,7 +82,7 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Transisi Umum */
-input, select, button {
-    transition: all 0.2s ease;
+/* Efek Focus Outline Global yang rapi */
+input:focus, select:focus, button:focus {
+    outline: none;
 }
