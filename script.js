@@ -283,7 +283,6 @@ async function loadDirektori() {
             
             const cardBgColor = getCardGradient(sub); // Dynamic Card Color berdasarkan sub
             
-            // Grid diperbarui: maksimal 3 kolom di layar super besar (biar kartu lebih luas ke samping)
             html += `<div class="mb-10"><h3 class="text-lg font-bold text-gray-700 mb-5 flex items-center"><span class="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm uppercase tracking-wider border border-blue-200 shadow-sm">${sub}</span></h3><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">`;
             
             groupedData[kat][sub].forEach(menu => {
@@ -301,8 +300,8 @@ async function loadDirektori() {
                         </div>
                         <div class="bg-gradient-to-br ${cardBgColor} text-white p-5 rounded-t-2xl"><h3 class="text-xl font-black tracking-wide pr-8 leading-tight break-words">${menu.nama}</h3></div>
                         <div class="p-5 md:p-6 flex-grow flex flex-col">
-                            <!-- Scroll Area Diperpanjang (h-48 untuk mobile, md:h-56 untuk desktop) -->
-                            <ul class="mb-5 h-48 md:h-56 overflow-y-auto custom-scrollbar flex-grow pr-2">${menu.komposisiHTML || '<li class="text-sm text-gray-400 italic">Tanpa komposisi</li>'}</ul>
+                            <!-- PERBAIKAN: Tinggi (h-72) Area Daftar Komposisi Diperpanjang -->
+                            <ul class="mb-5 h-72 md:h-80 overflow-y-auto custom-scrollbar flex-grow pr-2">${menu.komposisiHTML || '<li class="text-sm text-gray-400 italic">Tanpa komposisi</li>'}</ul>
                             <div class="bg-gray-50 p-4 rounded-xl text-[15px] space-y-2 border border-gray-100 mt-auto">
                                 <div class="flex justify-between items-center"><span class="text-gray-500 font-medium">Harga Jual:</span><span class="font-bold text-gray-800">${formatRp(menu.harga_jual)}</span></div>
                                 <div class="flex justify-between items-center"><span class="text-gray-500 font-medium">HPP Cost:</span><span class="font-bold text-gray-800">${formatRp(menu.totalCost)}</span></div>
