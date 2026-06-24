@@ -15,6 +15,22 @@ function formatRupiahInput(element) { let val = element.value.replace(/[^,\d]/g,
 function getNilaiAsli(stringInput) { return parseFloat(String(stringInput).replace(/[^0-9]/g, '')) || 0; }
 function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
 
+// ================= MOBILE MENU LOGIC =================
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const overlay = document.getElementById('mobile-overlay');
+    
+    if(menu.classList.contains('translate-x-full')) {
+        menu.classList.remove('translate-x-full');
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+    } else {
+        menu.classList.add('translate-x-full');
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+}
+
 // ================= LOADING & NOTIFICATION LOGIC =================
 function showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
 function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
@@ -41,18 +57,34 @@ async function inisialisasiAuth() {
 
 function renderAuthUI() {
     const elAdmins = document.querySelectorAll('.admin-only');
+    
+    // Desktop Buttons
     const btnLogin = document.getElementById('btn-login');
     const btnLogout = document.getElementById('btn-logout');
     const userStatus = document.getElementById('user-status');
+    
+    // Mobile Buttons
+    const btnLoginMobile = document.getElementById('btn-login-mobile');
+    const btnLogoutMobile = document.getElementById('btn-logout-mobile');
+    const userStatusMobile = document.getElementById('user-status-mobile');
 
     if (adminAktif) {
         elAdmins.forEach(el => el.classList.remove('hidden'));
+        
         btnLogin.classList.add('hidden'); btnLogout.classList.remove('hidden');
-        userStatus.innerHTML = "🌟 Admin Area"; userStatus.classList.replace('text-gray-500', 'text-green-600');
+        btnLoginMobile.classList.add('hidden'); btnLogoutMobile.classList.remove('hidden');
+        
+        userStatus.innerHTML = "🌟 Admin Area"; userStatus.classList.replace('text-gray-500', 'text-blue-600'); userStatus.classList.replace('bg-gray-100', 'bg-blue-50');
+        userStatusMobile.innerHTML = "🌟 Admin Area"; userStatusMobile.classList.replace('text-gray-500', 'text-blue-600'); userStatusMobile.classList.replace('bg-gray-100', 'bg-blue-50');
     } else {
         elAdmins.forEach(el => el.classList.add('hidden'));
+        
         btnLogin.classList.remove('hidden'); btnLogout.classList.add('hidden');
-        userStatus.innerHTML = "👤 Guest (View Only)"; userStatus.classList.replace('text-green-600', 'text-gray-500');
+        btnLoginMobile.classList.remove('hidden'); btnLogoutMobile.classList.add('hidden');
+        
+        userStatus.innerHTML = "👤 Guest"; userStatus.classList.replace('text-blue-600', 'text-gray-500'); userStatus.classList.replace('bg-blue-50', 'bg-gray-100');
+        userStatusMobile.innerHTML = "👤 Guest (View Only)"; userStatusMobile.classList.replace('text-blue-600', 'text-gray-500'); userStatusMobile.classList.replace('bg-blue-50', 'bg-gray-100');
+        
         if(document.getElementById('tab-input-hpp').classList.contains('active')) { switchTab('tab-direktori'); }
     }
 }
@@ -62,19 +94,36 @@ async function loginAdmin() {
     if(!email || !password) return alert("Masukkan email dan password!");
     btn.innerText = "Memverifikasi...";
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    btn.innerText = "Masuk";
+    btn.innerText = "Autentikasi";
     if(error) alert("Gagal Login: " + error.message);
-    else { closeModal('modal-login'); document.getElementById('login-email').value = ''; document.getElementById('login-password').value = ''; alert("Berhasil masuk sebagai Admin!"); }
+    else { closeModal('modal-login'); document.getElementById('login-email').value = ''; document.getElementById('login-password').value = ''; }
 }
 
-async function logoutAdmin() { await supabaseClient.auth.signOut(); alert("Anda telah keluar dari mode Admin."); }
+async function logoutAdmin() { await supabaseClient.auth.signOut(); }
 
 // ================= TAB LOGIC & EVENT LISTENER =================
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    
+    // Reset styling Desktop Tabs
     document.querySelectorAll('.btn-tab').forEach(el => el.classList.remove('active'));
+    
+    // Reset styling Mobile Tabs
+    document.querySelectorAll('.btn-tab-mobile').forEach(el => {
+        el.classList.remove('bg-blue-50', 'text-blue-700', 'font-bold');
+        el.classList.add('text-gray-600', 'font-semibold');
+    });
+
+    // Aktifkan Desktop Tab
     document.getElementById(tabId).classList.add('active');
     document.getElementById('btn-' + tabId).classList.add('active');
+    
+    // Aktifkan Mobile Tab
+    const mobileBtn = document.getElementById('btn-' + tabId + '-mobile');
+    if(mobileBtn) {
+        mobileBtn.classList.remove('text-gray-600', 'font-semibold');
+        mobileBtn.classList.add('bg-blue-50', 'text-blue-700', 'font-bold');
+    }
 
     if(tabId === 'tab-bahan-baku') { bbCurrentPage = 1; loadBahanBaku(); }
     if(tabId === 'tab-input-hpp') loadDropdownBahanBaku('baru');
@@ -126,19 +175,21 @@ function renderTabelBahanBaku() {
     const pageData = filteredData.slice(startIndex, endIndex);
 
     const tbody = document.getElementById('table-bahan-baku'); tbody.innerHTML = '';
-    if(totalData === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-400">Bahan baku tidak ditemukan.</td></tr>`; } 
+    if(totalData === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-400 italic">Bahan baku tidak ditemukan.</td></tr>`; } 
     else {
         pageData.forEach(item => {
             tbody.innerHTML += `
-                <tr class="border-b hover:bg-gray-50 relative">
-                    <td class="p-2 font-medium truncate max-w-xs border-r">${item.nama}</td><td class="p-2 border-l bg-gray-50 text-gray-600">${item.satuan_beli || '-'}</td>
-                    <td class="p-2 border-r bg-gray-50 font-medium">${item.harga_beli ? formatRp(item.harga_beli) : '-'}</td>
-                    <td class="p-2 text-gray-600">${item.nilai_konversi || 1} ${item.satuan}</td><td class="p-2 text-blue-600 font-bold">${formatRp(item.harga)} <span class="text-xs text-gray-400">/ ${item.satuan}</span></td>
-                    <td class="p-2 text-center border-l admin-only ${adminAktif ? '' : 'hidden'}">
-                        <button onclick="toggleKebabMenu(event, 'drop-bb-${item.id}')" class="kebab-btn hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-full font-bold">⋮</button>
-                        <div id="drop-bb-${item.id}" class="dropdown-menu hidden absolute right-10 mt-1 bg-white shadow-lg rounded border w-32 py-1 z-20">
-                            <button onclick="bukaModalEditBB(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
-                            <button onclick="aksiHapusBahanBaku(${item.id}, '${item.nama}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-red-600">🗑️ Hapus</button>
+                <tr class="border-b border-gray-100 hover:bg-blue-50/30 transition-colors relative">
+                    <td class="p-4 font-bold text-gray-700 truncate max-w-xs border-r">${item.nama}</td>
+                    <td class="p-3 border-l text-gray-500 bg-gray-50/50">${item.satuan_beli || '-'}</td>
+                    <td class="p-3 border-r font-semibold text-gray-700 bg-gray-50/50">${item.harga_beli ? formatRp(item.harga_beli) : '-'}</td>
+                    <td class="p-3 text-gray-500">${item.nilai_konversi || 1} ${item.satuan}</td>
+                    <td class="p-3 text-blue-700 font-black">${formatRp(item.harga)} <span class="text-xs text-gray-400 font-normal">/ ${item.satuan}</span></td>
+                    <td class="p-3 text-center border-l admin-only ${adminAktif ? '' : 'hidden'}">
+                        <button onclick="toggleKebabMenu(event, 'drop-bb-${item.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-lg font-bold transition-colors">⋮</button>
+                        <div id="drop-bb-${item.id}" class="dropdown-menu hidden absolute right-12 mt-1 bg-white shadow-xl rounded-xl border border-gray-100 w-32 py-2 z-20">
+                            <button onclick="bukaModalEditBB(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-blue-50 font-semibold text-blue-600">📝 Edit</button>
+                            <button onclick="aksiHapusBahanBaku(${item.id}, '${item.nama}')" class="w-full text-left px-4 py-2 hover:bg-red-50 font-semibold text-red-600">🗑️ Hapus</button>
                         </div>
                     </td>
                 </tr>
@@ -149,14 +200,14 @@ function renderTabelBahanBaku() {
     document.getElementById('bb-info-halaman').innerText = `Menampilkan ${totalData > 0 ? startIndex + 1 : 0} - ${Math.min(endIndex, totalData)} dari ${totalData} data`;
     let btnHTML = '';
     if(!isAll && totalPages > 1) {
-        btnHTML += `<button onclick="ubahHalamanBB(${Math.max(1, bbCurrentPage - 1)})" class="px-2 py-1 border rounded hover:bg-gray-100 ${bbCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}">Prev</button>`;
+        btnHTML += `<button onclick="ubahHalamanBB(${Math.max(1, bbCurrentPage - 1)})" class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 font-medium ${bbCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}">Prev</button>`;
         for(let i=1; i<=totalPages; i++) {
             if (i === bbCurrentPage || i === 1 || i === totalPages || (i >= bbCurrentPage - 1 && i <= bbCurrentPage + 1)) {
-                let active = i === bbCurrentPage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100 text-gray-700';
-                btnHTML += `<button onclick="ubahHalamanBB(${i})" class="px-3 py-1 border rounded ${active}">${i}</button>`;
-            } else if (i === 2 || i === totalPages - 1) { btnHTML += `<span class="px-1 text-gray-400">...</span>`; }
+                let active = i === bbCurrentPage ? 'bg-blue-600 text-white border-blue-600 shadow' : 'hover:bg-gray-100 text-gray-700 border-gray-200';
+                btnHTML += `<button onclick="ubahHalamanBB(${i})" class="px-3 py-1.5 border rounded-lg font-medium ${active}">${i}</button>`;
+            } else if (i === 2 || i === totalPages - 1) { btnHTML += `<span class="px-2 text-gray-400">...</span>`; }
         }
-        btnHTML += `<button onclick="ubahHalamanBB(${Math.min(totalPages, bbCurrentPage + 1)})" class="px-2 py-1 border rounded hover:bg-gray-100 ${bbCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">Next</button>`;
+        btnHTML += `<button onclick="ubahHalamanBB(${Math.min(totalPages, bbCurrentPage + 1)})" class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 font-medium ${bbCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">Next</button>`;
     }
     document.getElementById('bb-pagination-controls').innerHTML = btnHTML; renderAuthUI();
 }
@@ -206,8 +257,8 @@ async function simpanEditBahanBaku() {
 async function loadDropdownBahanBaku(targetElement) {
     const { data } = await supabaseClient.from('bahan_baku').select('*').order('nama'); bahanBakuList = data || [];
     const prefix = targetElement === 'edit' ? 'edit-r-' : 'r-'; const ul = document.getElementById(prefix + 'dropdown-list'); ul.innerHTML = '';
-    if(bahanBakuList.length === 0) { ul.innerHTML = '<li class="p-3 text-gray-400 text-sm italic">Belum ada bahan</li>'; } 
-    else { bahanBakuList.forEach(bb => { ul.innerHTML += `<li class="p-3 border-b cursor-pointer hover:bg-blue-50 text-sm bb-item flex justify-between items-center" onclick="pilihBahanBaku('${targetElement}', '${bb.id}', '${bb.nama.replace(/'/g, "\\'")}', ${bb.harga}, '${bb.satuan}')"><div class="font-semibold text-gray-800">${bb.nama}</div><div class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">${formatRp(bb.harga)} / ${bb.satuan}</div></li>`; }); }
+    if(bahanBakuList.length === 0) { ul.innerHTML = '<li class="p-4 text-gray-400 text-sm italic text-center">Belum ada bahan di database</li>'; } 
+    else { bahanBakuList.forEach(bb => { ul.innerHTML += `<li class="p-3 border-b border-gray-100 cursor-pointer hover:bg-blue-50 text-sm bb-item flex justify-between items-center transition-colors" onclick="pilihBahanBaku('${targetElement}', '${bb.id}', '${bb.nama.replace(/'/g, "\\'")}', ${bb.harga}, '${bb.satuan}')"><div class="font-bold text-gray-700">${bb.nama}</div><div class="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-md">${formatRp(bb.harga)} <span class="text-gray-500 font-normal">/ ${bb.satuan}</span></div></li>`; }); }
 }
 
 function bukaDropdownBB(mode) { const prefix = mode === 'edit' ? 'edit-r-' : 'r-'; document.getElementById(prefix + 'dropdown-list').classList.remove('hidden'); filterDropdownBB(mode); }
@@ -239,7 +290,7 @@ function removeTempKomposisi(mode, index) { if(mode === 'edit') tempKomposisiEdi
 function renderKomposisi(mode) {
     const prefix = mode === 'edit' ? 'edit-' : ''; const dataArr = mode === 'edit' ? tempKomposisiEdit : tempKomposisiBaru;
     const tbody = document.getElementById(prefix + 'temp-komposisi-list'); tbody.innerHTML = '';
-    dataArr.forEach((item, idx) => { tbody.innerHTML += `<tr class="border-b bg-white"><td class="p-2">${item.nama}</td><td class="p-2 text-gray-600">${item.qty} ${item.satuan}</td><td class="p-2 text-blue-600 font-medium">${formatRp(item.subtotal)}</td><td class="p-2 text-center"><button onclick="removeTempKomposisi('${mode}', ${idx})" class="bg-red-100 text-red-600 rounded px-2 hover:bg-red-200 font-bold">✕</button></td></tr>`; });
+    dataArr.forEach((item, idx) => { tbody.innerHTML += `<tr class="hover:bg-gray-50 transition-colors"><td class="p-3 font-semibold text-gray-700">${item.nama}</td><td class="p-3 text-gray-500 text-center">${item.qty} ${item.satuan}</td><td class="p-3 text-blue-600 font-bold text-right">${formatRp(item.subtotal)}</td><td class="p-3 text-center"><button onclick="removeTempKomposisi('${mode}', ${idx})" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors font-bold text-lg leading-none">×</button></td></tr>`; });
     updateKalkulasiHPP(mode);
 }
 
@@ -256,7 +307,7 @@ function updateKalkulasiHPP(mode) {
 
 async function simpanResepFinal() {
     const nama = document.getElementById('r-nama').value.trim(); const kategori = document.getElementById('r-kategori').value.trim(); const sub = document.getElementById('r-sub').value.trim(); const harga_jual = getNilaiAsli(document.getElementById('r-harga-jual').value);
-    if(!nama || !kategori || tempKomposisiBaru.length === 0) return alert("Lengkapi data!");
+    if(!nama || !kategori || tempKomposisiBaru.length === 0) return alert("Lengkapi data menu dan resep!");
     
     showLoading();
     const { data: resepData, error: resepErr } = await supabaseClient.from('resep').insert([{ nama, kategori, sub_kategori: sub, harga_jual }]).select();
@@ -278,7 +329,7 @@ async function loadDirektori() {
         (menu.resep_detail || []).forEach(det => {
             if (det.bahan_baku) {
                 const cost = det.qty * det.bahan_baku.harga; totalCost += cost;
-                komposisiHTML += `<li class="flex justify-between text-sm"><span class="text-gray-600">- ${det.bahan_baku.nama} (${det.qty}${det.bahan_baku.satuan})</span> <span>${formatRp(cost)}</span></li>`;
+                komposisiHTML += `<li class="flex justify-between text-sm py-1 border-b border-gray-100 last:border-0"><span class="text-gray-500 font-medium">${det.bahan_baku.nama} <span class="text-xs text-gray-400">(${det.qty}${det.bahan_baku.satuan})</span></span> <span class="font-semibold text-gray-700">${formatRp(cost)}</span></li>`;
             }
         });
         return { ...menu, totalCost, margin: menu.harga_jual - totalCost, hppPersen: menu.harga_jual > 0 ? (totalCost / menu.harga_jual) * 100 : 0, komposisiHTML };
@@ -293,7 +344,7 @@ async function loadDirektori() {
     if(sortBy === 'hpp_desc') processedData.sort((a,b) => b.hppPersen - a.hppPersen);
 
     const wrapper = document.getElementById('recipe-wrapper'); wrapper.innerHTML = '';
-    if(processedData.length === 0) { wrapper.innerHTML = `<div class="w-full text-center py-10 text-gray-400">Belum ada resep.</div>`; return; }
+    if(processedData.length === 0) { wrapper.innerHTML = `<div class="w-full text-center py-20 text-gray-400 italic">Data menu belum tersedia.</div>`; return; }
 
     const groupedData = {};
     processedData.forEach(menu => {
@@ -302,27 +353,28 @@ async function loadDirektori() {
     });
 
     Object.keys(groupedData).sort().forEach(kat => {
-        let html = `<div class="mb-10 w-full bg-white p-6 rounded-lg shadow-sm border border-gray-100"><h2 class="text-2xl font-extrabold text-gray-800 mb-6 border-b-4 border-blue-500 inline-block pr-6 pb-2 tracking-wide">${kat}</h2>`;
+        let html = `<div class="mb-12"><h2 class="text-3xl font-black text-gray-800 mb-6 border-b-4 border-blue-600 inline-block pr-8 pb-1 tracking-tight uppercase">${kat}</h2>`;
         Object.keys(groupedData[kat]).sort().forEach(sub => {
-            html += `<div class="mb-8"><h3 class="text-lg font-bold text-gray-700 mb-4 ml-1 flex items-center"><span class="bg-blue-100 text-blue-800 px-4 py-1.5 rounded-full text-sm uppercase tracking-wider border border-blue-200">${sub}</span></h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+            html += `<div class="mb-10"><h3 class="text-lg font-bold text-gray-700 mb-5 flex items-center"><span class="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm uppercase tracking-wider border border-blue-200 shadow-sm">${sub}</span></h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">`;
             groupedData[kat][sub].forEach(menu => {
-                let hppColor = menu.hppPersen > 35 ? 'text-red-600' : 'text-green-600';
+                let hppColor = menu.hppPersen > 35 ? 'text-red-500' : 'text-emerald-500';
                 html += `
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 relative hover:shadow-lg transition-shadow">
-                        <div class="absolute top-3 right-3 z-10 admin-only ${adminAktif ? '' : 'hidden'}">
-                            <button onclick="toggleKebabMenu(event, 'drop-r-${menu.id}')" class="kebab-btn bg-black/40 hover:bg-black/60 text-white w-8 h-8 rounded-full font-bold shadow">⋮</button>
-                            <div id="drop-r-${menu.id}" class="dropdown-menu hidden absolute right-0 mt-1 bg-white shadow-lg rounded border w-28 py-1 text-sm text-gray-700">
-                                <button onclick="bukaModalEditResep(${JSON.stringify(menu).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-blue-600">📝 Edit</button>
-                                <button onclick="aksiHapusResep(${menu.id}, '${menu.nama}')" class="w-full text-left px-4 py-2 hover:bg-gray-100 font-medium text-red-600">🗑️ Hapus</button>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible relative hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col">
+                        <div class="absolute top-3 right-3 z-10 admin-only ${adminAktif ? '' : 'hidden'} opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="toggleKebabMenu(event, 'drop-r-${menu.id}')" class="kebab-btn bg-white/90 backdrop-blur hover:bg-white text-gray-800 w-8 h-8 rounded-lg font-bold shadow-md border border-gray-200">⋮</button>
+                            <div id="drop-r-${menu.id}" class="dropdown-menu hidden absolute right-0 mt-1 bg-white shadow-xl rounded-xl border border-gray-100 w-32 py-2 text-sm text-gray-700">
+                                <button onclick="bukaModalEditResep(${JSON.stringify(menu).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-blue-50 font-bold text-blue-600">📝 Edit</button>
+                                <button onclick="aksiHapusResep(${menu.id}, '${menu.nama}')" class="w-full text-left px-4 py-2 hover:bg-red-50 font-bold text-red-600">🗑️ Hapus</button>
                             </div>
                         </div>
-                        <div class="bg-gray-800 text-white p-4 pr-12"><h3 class="text-xl font-bold truncate">${menu.nama}</h3></div>
-                        <div class="p-4"><ul class="space-y-1 mb-4 h-24 overflow-y-auto border-b pb-2">${menu.komposisiHTML || '<li class="text-xs text-gray-400">Tanpa komposisi</li>'}</ul>
-                            <div class="bg-gray-50 p-3 rounded text-sm space-y-1.5 border">
-                                <div class="flex justify-between"><span class="text-gray-500">Harga Target:</span><span class="font-bold text-gray-800">${formatRp(menu.harga_jual)}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Cost/HPP:</span><span class="font-bold text-red-600">${formatRp(menu.totalCost)}</span></div>
-                                <div class="flex justify-between border-t pt-1.5"><span class="text-gray-500">Margin:</span><span class="font-bold text-green-600">${formatRp(menu.margin)}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">% HPP:</span><span class="font-bold ${hppColor}">${menu.hppPersen.toFixed(2)}%</span></div>
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-5 rounded-t-2xl"><h3 class="text-xl font-black truncate tracking-wide pr-8">${menu.nama}</h3></div>
+                        <div class="p-5 flex-grow flex flex-col">
+                            <ul class="mb-5 h-28 overflow-y-auto custom-scrollbar flex-grow pr-2">${menu.komposisiHTML || '<li class="text-sm text-gray-400 italic">Tanpa komposisi</li>'}</ul>
+                            <div class="bg-gray-50 p-4 rounded-xl text-sm space-y-2 border border-gray-100 mt-auto">
+                                <div class="flex justify-between items-center"><span class="text-gray-500 font-medium">Harga Jual:</span><span class="font-bold text-gray-800">${formatRp(menu.harga_jual)}</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-500 font-medium">HPP Cost:</span><span class="font-bold text-red-500">${formatRp(menu.totalCost)}</span></div>
+                                <div class="flex justify-between items-center border-t border-gray-200 pt-2"><span class="text-gray-500 font-medium">Margin:</span><span class="font-bold text-emerald-500">${formatRp(menu.margin)}</span></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-500 font-medium">% HPP:</span><span class="font-black text-lg ${hppColor}">${menu.hppPersen.toFixed(2)}%</span></div>
                             </div>
                         </div>
                     </div>
@@ -382,7 +434,7 @@ function batalImport() {
 
 function jalankanImport(mode) { 
     closeModal('modal-import-option'); 
-    showLoading(); // Tampilkan Loading Spinner saat import diproses
+    showLoading(); 
     if(jenisImportTertunda === 'bb') eksekusiImportBahanBaku(mode); 
     else eksekusiImportResep(mode); 
 }
@@ -401,8 +453,7 @@ function eksekusiImportBahanBaku(mode) {
                 hideLoading(); alert("Data kosong!"); batalImport(); return; 
             }
 
-            let successCount = 0;
-            let failCount = 0;
+            let successCount = 0; let failCount = 0;
 
             if(mode === 'replace') {
                 const { error: delError } = await supabaseClient.from('bahan_baku').delete().neq('id', 0);
@@ -428,15 +479,11 @@ function eksekusiImportBahanBaku(mode) {
                 }
             }
             
-            hideLoading();
-            loadBahanBaku(); 
-            batalImport();
+            hideLoading(); loadBahanBaku(); batalImport();
             showSummaryModal(failCount === 0, 'Import Bahan Baku Selesai', successCount, failCount);
 
         } catch (err) {
-            hideLoading();
-            alert("Terjadi kesalahan sistem saat membaca Excel.");
-            batalImport();
+            hideLoading(); alert("Terjadi kesalahan sistem saat membaca Excel."); batalImport();
         }
     }; 
     reader.readAsArrayBuffer(fileImportTertunda);
@@ -469,14 +516,12 @@ function eksekusiImportResep(mode) {
                 if(mId) grp[m].ing.push({ bahan_baku_id:mId, qty:parseFloat(r["Qty"]||0) }); 
             });
 
-            let successCount = 0;
-            let failCount = 0;
+            let successCount = 0; let failCount = 0;
 
             for(let k in grp) {
-                if(grp[k].ing.length === 0) { failCount++; continue; } // Gagal jika bahan baku tidak terdaftar
+                if(grp[k].ing.length === 0) { failCount++; continue; }
                 
-                let rId;
-                let hasError = false;
+                let rId; let hasError = false;
 
                 if(mode === 'modify') { 
                     const { data: cR } = await supabaseClient.from('resep').select('id').eq('nama', grp[k].nama).single(); 
@@ -500,15 +545,11 @@ function eksekusiImportResep(mode) {
                 if(hasError) failCount++; else successCount++;
             }
             
-            hideLoading();
-            batalImport(); 
-            loadDirektori();
+            hideLoading(); batalImport(); loadDirektori();
             showSummaryModal(failCount === 0, 'Import Resep Selesai', successCount, failCount);
 
         } catch (err) {
-            hideLoading();
-            alert("Terjadi kesalahan saat mengelola resep!");
-            batalImport();
+            hideLoading(); alert("Terjadi kesalahan saat mengelola resep!"); batalImport();
         }
     }; 
     reader.readAsArrayBuffer(fileImportTertunda);
