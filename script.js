@@ -12,6 +12,10 @@ let bbCurrentPage = 1, bbItemsPerPage = 10;
 let adminAktif = null;
 let bbSortKey = 'nama', bbSortOrder = 'asc';
 
+// State untuk sorting summary
+let summarySortKey = 'nama';
+let summarySortAsc = true;
+
 // State global pemrosesan data resep katalog/summary local caching
 let cachedResepSummaryData = [];
 
@@ -165,6 +169,8 @@ async function loadKategoriDB() {
         listSubKategori = data.filter(d => d.jenis === 'Sub-Kategori');
         renderDropdownKategori();
         renderTabelManajemenKategori();
+        // [UPDATE] isi dropdown filter di direktori
+        populateFilterKategoriDirektori();
     }
 }
 
@@ -179,6 +185,15 @@ function renderDropdownKategori() {
     if(fSum) {
         fSum.innerHTML = '<option value="all">Semua Kategori</option>' + listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
     }
+}
+
+// [UPDATE] isi dropdown filter kategori di direktori
+function populateFilterKategoriDirektori() {
+    const filterEl = document.getElementById('filter-kategori-direktori');
+    if(!filterEl) return;
+    const currentVal = filterEl.value;
+    filterEl.innerHTML = '<option value="all">Semua Kategori</option>' + listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
+    filterEl.value = currentVal;
 }
 
 function renderTabelManajemenKategori() {
@@ -439,7 +454,6 @@ async function duplikasiResepCard(id, namaMenu) {
         const { data: detailResep, error: errDetail } = await supabaseClient.from('resep_detail').select('*').eq('resep_id', id);
         if(errDetail) throw new Error("Gagal mengunduh komposisi bahan resep baku.");
 
-        // Tambah awalan copy - [nama menu] sesuai instruksi nomor 1
         const cloneNama = `copy - ${mainResep.nama}`;
 
         const { data: insertedResep, error: errInsert } = await supabaseClient.from('resep').insert([{
@@ -512,6 +526,11 @@ async function loadDirektori() {
 function renderCatalogDirektori() {
     let processedData = [...cachedResepSummaryData];
     const searchKey = document.getElementById('search-resep').value.toLowerCase();
+    // [UPDATE] filter kategori
+    const filterKat = document.getElementById('filter-kategori-direktori').value;
+    if(filterKat !== 'all') {
+        processedData = processedData.filter(m => m.kategori === filterKat);
+    }
     if(searchKey) processedData = processedData.filter(m => m.nama.toLowerCase().includes(searchKey) || (m.kategori && m.kategori.toLowerCase().includes(searchKey)) || (m.sub_kategori && m.sub_kategori.toLowerCase().includes(searchKey)));
     const sortBy = document.getElementById('sort-resep').value;
     if(sortBy === 'nama') processedData.sort((a,b) => a.nama.localeCompare(b.nama));
@@ -572,7 +591,7 @@ function renderCatalogDirektori() {
     renderAuthUI();
 }
 
-// ================= TAB SUMMARY UI ENGINE (REQUEST #2) =================
+// [UPDATE] ================= TAB SUMMARY UI ENGINE (DENGAN SORT HEADER & CHECKBOX) =================
 function renderTableSummary() {
     const tbody = document.getElementById('table-summary-body');
     if(!tbody) return;
@@ -580,27 +599,35 @@ function renderTableSummary() {
     let sData = [...cachedResepSummaryData];
     const searchVal = document.getElementById('search-summary').value.toLowerCase();
     const filterKat = document.getElementById('filter-summary-kat').value;
-    const sortVal = document.getElementById('sort-summary').value;
-
+    // sorting via state
     if(searchVal) sData = sData.filter(m => m.nama.toLowerCase().includes(searchVal));
     if(filterKat !== 'all') sData = sData.filter(m => m.kategori === filterKat);
 
-    if(sortVal === 'nama-asc') sData.sort((a,b) => a.nama.localeCompare(b.nama));
-    if(sortVal === 'nama-desc') sData.sort((a,b) => b.nama.localeCompare(a.nama));
-    if(sortVal === 'hpp-asc') sData.sort((a,b) => a.totalCost - b.totalCost);
-    if(sortVal === 'hpp-desc') sData.sort((a,b) => b.totalCost - a.totalCost);
-    if(sortVal === 'margin-desc') sData.sort((a,b) => b.margin - a.margin);
+    // Terapkan sorting berdasarkan key dan arah
+    sData.sort((a, b) => {
+        let valA = a[summarySortKey] !== undefined ? a[summarySortKey] : '';
+        let valB = b[summarySortKey] !== undefined ? b[summarySortKey] : '';
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return summarySortAsc ? -1 : 1;
+        if (valA > valB) return summarySortAsc ? 1 : -1;
+        return 0;
+    });
 
     tbody.innerHTML = '';
     if(sData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-gray-400 italic">Tidak ada resep data summary.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-8 text-gray-400 italic">Tidak ada resep data summary.</td></tr>`;
         return;
     }
 
     sData.forEach(m => {
         let textHppColor = m.hppPersen > hppLimitThreshold ? 'text-red-600 font-black' : 'text-emerald-600 font-bold';
+        const isAdmin = adminAktif !== null;
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50 transition-colors">
+                <td class="p-4 w-8 text-center">
+                    <input type="checkbox" class="summary-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-400" value="${m.id}" />
+                </td>
                 <td class="p-4 font-bold text-gray-800">${m.nama}</td>
                 <td class="p-4 text-gray-600 text-xs font-semibold"><span class="bg-gray-100 border px-2 py-1 rounded-md">${m.kategori}</span></td>
                 <td class="p-4 text-gray-500 text-xs">${m.sub_kategori}</td>
@@ -608,9 +635,85 @@ function renderTableSummary() {
                 <td class="p-4 text-right font-semibold text-blue-600">${formatRp(m.totalCost)}</td>
                 <td class="p-4 text-center ${textHppColor}">${m.hppPersen.toFixed(1)}%</td>
                 <td class="p-4 text-right font-bold ${m.margin < 0 ? 'text-red-500':'text-emerald-600'}">${formatRp(m.margin)}</td>
+                <td class="p-4 text-center relative">
+                    ${isAdmin ? `
+                        <button onclick="toggleKebabMenu(event, 'drop-summary-${m.id}')" class="kebab-btn bg-gray-100 hover:bg-gray-200 text-gray-600 w-8 h-8 rounded-lg font-bold transition-colors">⋮</button>
+                        <div id="drop-summary-${m.id}" class="dropdown-menu hidden absolute right-0 mt-1 bg-white shadow-xl rounded-xl border border-gray-100 w-40 py-2 text-sm text-gray-700 z-30">
+                            <button onclick="infoResepCard(${m.id})" class="w-full text-left px-4 py-2 hover:bg-blue-50 font-bold text-blue-600">ℹ️ Info</button>
+                            <button onclick="bukaModalEditResep(${JSON.stringify(m).replace(/"/g, '&quot;')})" class="w-full text-left px-4 py-2 hover:bg-blue-50 font-bold text-blue-600">📝 Edit</button>
+                            <button onclick="aksiHapusResep(${m.id}, '${m.nama}')" class="w-full text-left px-4 py-2 hover:bg-red-50 font-bold text-red-600 border-t border-gray-100">🗑️ Hapus</button>
+                        </div>
+                    ` : `<span class="text-gray-400 text-xs">-</span>`}
+                </td>
             </tr>
         `;
     });
+
+    // Update icon sort di header
+    document.querySelectorAll('#summary-table .sortable').forEach(th => {
+        const key = th.dataset.sort;
+        const icon = th.querySelector('.sort-icon');
+        if(key === summarySortKey) {
+            icon.textContent = summarySortAsc ? '▲' : '▼';
+        } else {
+            icon.textContent = '▽';
+        }
+    });
+
+    // Update tombol hapus massal visibilitas
+    const btnMass = document.getElementById('btn-delete-massal');
+    if(btnMass) {
+        if(adminAktif) btnMass.classList.remove('hidden'); else btnMass.classList.add('hidden');
+    }
+    // reset checkbox select all
+    document.getElementById('select-all-summary').checked = false;
+}
+
+// ================= INFO RESEP MODAL =================
+function infoResepCard(id) {
+    const menu = cachedResepSummaryData.find(m => m.id === id);
+    if(!menu) return alert('Data tidak ditemukan');
+    document.getElementById('info-resep-nama').innerText = menu.nama;
+    let detailHtml = `
+        <p><strong>Kategori:</strong> ${menu.kategori}</p>
+        <p><strong>Sub Kategori:</strong> ${menu.sub_kategori}</p>
+        <p><strong>Harga Jual:</strong> ${formatRp(menu.harga_jual)}</p>
+        <p><strong>Yield (Porsi):</strong> ${menu.yield}</p>
+        <p><strong>HPP / Porsi:</strong> ${formatRp(menu.totalCost)}</p>
+        <p><strong>Margin:</strong> ${formatRp(menu.margin)}</p>
+        <p><strong>% HPP:</strong> ${menu.hppPersen.toFixed(1)}%</p>
+        <hr class="my-3" />
+        <p class="font-bold">Komposisi Bahan:</p>
+        <ul class="list-disc pl-5 space-y-1">${menu.komposisiHTML || '<li class="text-gray-400 italic">Tidak ada</li>'}</ul>
+    `;
+    document.getElementById('info-resep-detail').innerHTML = detailHtml;
+    document.getElementById('modal-info-resep').classList.remove('hidden');
+}
+
+// ================= HAPUS MASSAL RESEP =================
+function toggleSelectAllSummary() {
+    const checked = document.getElementById('select-all-summary').checked;
+    document.querySelectorAll('.summary-checkbox').forEach(cb => cb.checked = checked);
+}
+
+async function hapusMassalResep() {
+    const checkboxes = document.querySelectorAll('.summary-checkbox:checked');
+    if(checkboxes.length === 0) return alert('Pilih minimal satu menu yang akan dihapus.');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+    const namaMenus = ids.map(id => {
+        const menu = cachedResepSummaryData.find(m => m.id == id);
+        return menu ? menu.nama : id;
+    }).join('\n- ');
+    if(!confirm(`Anda yakin akan menghapus ${ids.length} menu berikut?\n- ${namaMenus}\n\nTindakan ini tidak dapat dibatalkan.`)) return;
+    showLoading();
+    const { error } = await supabaseClient.from('resep').delete().in('id', ids);
+    hideLoading();
+    if(error) {
+        alert('Gagal menghapus beberapa menu. Mungkin ada yang terkait dengan data lain.');
+    } else {
+        alert('Berhasil menghapus menu terpilih.');
+        loadDirektori();
+    }
 }
 
 // ================= TAB DASHBOARD LOGIC ENGINE (REQUEST #10) =================
@@ -738,6 +841,23 @@ function eksekusiImportKategori(mode) {
 function downloadTemplateResep() { const ws = XLSX.utils.json_to_sheet([{"Nama Menu":"Iced Choco Banana","Kategori":"Beverage","Sub Kategori":"Non-Coffee","Harga Jual":28000,"Yield (Porsi)":1,"Nama Bahan Baku":"Fresh Milk UHT","Qty":160}]); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Template"); XLSX.writeFile(wb, "Template_Resep.xlsx"); }
 async function exportResepToExcel() { const { data } = await supabaseClient.from('resep').select(`nama,kategori,sub_kategori,harga_jual,yield,resep_detail(qty,bahan_baku(nama,satuan,harga))`); let rec = []; data.forEach(m => m.resep_detail.forEach(d => rec.push({"Menu":m.nama,"Kategori":m.kategori,"Sub Kategori":m.sub_kategori,"Harga Jual":m.harga_jual,"Yield (Porsi)":m.yield || 1,"Nama Bahan Baku":d.bahan_baku?.nama,"Qty":d.qty,"Satuan":d.bahan_baku?.satuan,"Biaya Total":d.qty*(d.bahan_baku?.harga||0)}))); const ws = XLSX.utils.json_to_sheet(rec); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Resep"); XLSX.writeFile(wb, "Resep_Export.xlsx"); }
 function eksekusiImportResep(mode) { const reader = new FileReader(); reader.onload = async (e) => { try { const rows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).Sheets[XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).SheetNames[0]]); if(rows.length === 0) { hideLoading(); alert("Data Excel kosong!"); batalImport(); return; } if(mode === 'replace') await supabaseClient.from('resep').delete().neq('id', 0); const { data: bbData } = await supabaseClient.from('bahan_baku').select('*'); const bbMap = {}; bbData.forEach(b => bbMap[b.nama.toLowerCase().trim()] = b.id); let grp = {}; rows.forEach(r => { const m = r["Menu"] || r["Nama Menu"]; if(!m) return; if(!grp[m]) grp[m] = { nama:m, kategori:r["Kategori"]||"Uncategorized", sub_kategori:r["Sub Kategori"]||"Uncategorized", harga_jual:parseFloat(r["Harga Jual"]||0), yield_porsi: parseFloat(r["Yield (Porsi)"]||1), ing:[] }; const mId = bbMap[String(r["Nama Bahan Baku"]||r["Bahan"]||"").toLowerCase().trim()]; if(mId) grp[m].ing.push({ bahan_baku_id:mId, qty:parseFloat(r["Qty"]||0) }); }); let successCount = 0; let failCount = 0; for(let k in grp) { if(grp[k].ing.length === 0) { failCount++; continue; } let rId; let hasError = false; if(mode === 'modify') { const { data: cR } = await supabaseClient.from('resep').select('id').eq('nama', grp[k].nama).single(); if(cR) { rId = cR.id; await supabaseClient.from('resep').update({kategori:grp[k].kategori, sub_kategori:grp[k].sub_kategori, harga_jual:grp[k].harga_jual, yield: grp[k].yield_porsi}).eq('id', rId); await supabaseClient.from('resep_detail').delete().eq('resep_id', rId); } } if(!rId) { const { data: nR, error: resepErr } = await supabaseClient.from('resep').insert([{nama:grp[k].nama, kategori:grp[k].kategori, sub_kategori:grp[k].sub_kategori, harga_jual:grp[k].harga_jual, yield: grp[k].yield_porsi}]).select(); if(resepErr) { hasError = true; } else { rId = nR[0].id; } } if(rId && !hasError) { const { error: detailErr } = await supabaseClient.from('resep_detail').insert(grp[k].ing.map(i => ({resep_id:rId, bahan_baku_id:i.bahan_baku_id, qty:i.qty}))); if(detailErr) hasError = true; } if(hasError) failCount++; else successCount++; } hideLoading(); batalImport(); loadDirektori(); showSummaryModal(failCount === 0, 'Import Resep Selesai', successCount, failCount); } catch (err) { hideLoading(); alert("Terjadi kesalahan saat mengelola resep!"); batalImport(); } }; reader.readAsArrayBuffer(fileImportTertunda); }
+
+// ================= SORTING HEADER CLICK =================
+document.addEventListener('click', function(e) {
+    const th = e.target.closest('.sortable');
+    if(th && th.closest('#summary-table')) {
+        const key = th.dataset.sort;
+        if(key) {
+            if(summarySortKey === key) {
+                summarySortAsc = !summarySortAsc;
+            } else {
+                summarySortKey = key;
+                summarySortAsc = true;
+            }
+            renderTableSummary();
+        }
+    }
+});
 
 // Initialize App
 window.onload = async () => { 
