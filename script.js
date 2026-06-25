@@ -80,17 +80,15 @@ function switchTab(tabId) {
 window.addEventListener('click', function(e) { if (!e.target.closest('button[onclick*="toggleKebabMenu"]')) { document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); } if (!e.target.closest('.bb-autocomplete')) { const d1 = document.getElementById('r-dropdown-list'); const d2 = document.getElementById('edit-r-dropdown-list'); if(d1) d1.classList.add('hidden'); if(d2) d2.classList.add('hidden'); } });
 function toggleKebabMenu(event, menuId) { event.stopPropagation(); const targetMenu = document.getElementById(menuId); const isHidden = targetMenu.classList.contains('hidden'); document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.add('hidden')); if (isHidden) targetMenu.classList.remove('hidden'); }
 
-// ================= LOGIKA DATABASE KATEGORI (BARU) =================
+// ================= LOGIKA DATABASE KATEGORI (dengan modal) =================
 async function loadKategoriDB() {
     const { data, error } = await supabaseClient.from('kategori_db').select('*').order('nama');
     if (!error && data) {
         listKategori = data.filter(d => d.jenis === 'Kategori');
         listSubKategori = data.filter(d => d.jenis === 'Sub-Kategori');
-        // Pastikan dropdown di-render
         renderDropdownKategori();
         renderTabelManajemenKategori();
     } else {
-        // Jika tabel belum ada, buat array kosong
         listKategori = [];
         listSubKategori = [];
         renderDropdownKategori();
@@ -109,33 +107,57 @@ function renderDropdownKategori() {
 function renderTabelManajemenKategori() {
     const ulKat = document.getElementById('list-manajemen-kategori'); const ulSub = document.getElementById('list-manajemen-sub-kategori');
     if(!ulKat || !ulSub) return;
-    ulKat.innerHTML = listKategori.length === 0 ? '<li class="text-sm text-gray-400 italic p-3 text-center">Belum ada Kategori</li>' : listKategori.map(k => `<li class="flex justify-between items-center bg-gray-50 border border-gray-100 p-3 rounded-lg"><span class="font-semibold text-gray-700">${k.nama}</span><div class="flex gap-2"><button onclick="editKategoriManajemen(${k.id}, 'Kategori', '${k.nama}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Edit</button><button onclick="hapusKategoriManajemen(${k.id}, '${k.nama}')" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Hapus</button></div></li>`).join('');
-    ulSub.innerHTML = listSubKategori.length === 0 ? '<li class="text-sm text-gray-400 italic p-3 text-center">Belum ada Sub-Kategori</li>' : listSubKategori.map(k => `<li class="flex justify-between items-center bg-gray-50 border border-gray-100 p-3 rounded-lg"><span class="font-semibold text-gray-700">${k.nama}</span><div class="flex gap-2"><button onclick="editKategoriManajemen(${k.id}, 'Sub-Kategori', '${k.nama}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Edit</button><button onclick="hapusKategoriManajemen(${k.id}, '${k.nama}')" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Hapus</button></div></li>`).join('');
+    ulKat.innerHTML = listKategori.length === 0 ? '<li class="text-sm text-gray-400 italic p-3 text-center">Belum ada Kategori</li>' : listKategori.map(k => `<li class="flex justify-between items-center bg-gray-50 border border-gray-100 p-3 rounded-lg"><span class="font-semibold text-gray-700">${k.nama}</span><div class="flex gap-2"><button onclick="bukaModalEditKategori(${k.id}, 'Kategori', '${k.nama}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Edit</button><button onclick="hapusKategoriManajemen(${k.id}, '${k.nama}')" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Hapus</button></div></li>`).join('');
+    ulSub.innerHTML = listSubKategori.length === 0 ? '<li class="text-sm text-gray-400 italic p-3 text-center">Belum ada Sub-Kategori</li>' : listSubKategori.map(k => `<li class="flex justify-between items-center bg-gray-50 border border-gray-100 p-3 rounded-lg"><span class="font-semibold text-gray-700">${k.nama}</span><div class="flex gap-2"><button onclick="bukaModalEditKategori(${k.id}, 'Sub-Kategori', '${k.nama}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Edit</button><button onclick="hapusKategoriManajemen(${k.id}, '${k.nama}')" class="text-red-500 hover:text-red-700 bg-red-50 px-2.5 py-1 rounded-md text-xs font-bold transition-colors">Hapus</button></div></li>`).join('');
 }
 
-async function tambahKategoriManajemen(jenis) {
-    const nama = prompt(`Masukkan nama ${jenis} baru:`);
-    if(!nama || nama.trim() === '') return;
-    showLoading(); await supabaseClient.from('kategori_db').insert([{ jenis: jenis, nama: nama.trim() }]);
-    await loadKategoriDB(); hideLoading(); alert(`${jenis} berhasil ditambahkan!`);
+// Buka modal untuk tambah kategori
+function bukaModalTambahKategori(jenis) {
+    document.getElementById('modal-kategori-id').value = '';
+    document.getElementById('modal-kategori-jenis').value = jenis;
+    document.getElementById('modal-kategori-title').innerText = `Tambah ${jenis}`;
+    document.getElementById('modal-kategori-label').innerText = `Nama ${jenis}`;
+    document.getElementById('modal-kategori-input').value = '';
+    document.getElementById('modal-kategori').classList.remove('hidden');
+    document.getElementById('modal-kategori-input').focus();
 }
 
-async function editKategoriManajemen(id, jenis, oldName) {
-    const newName = prompt(`Ubah nama "${oldName}" menjadi:`, oldName);
-    if(!newName || newName.trim() === '' || newName.trim() === oldName) return;
-    
+// Buka modal untuk edit kategori
+function bukaModalEditKategori(id, jenis, nama) {
+    document.getElementById('modal-kategori-id').value = id;
+    document.getElementById('modal-kategori-jenis').value = jenis;
+    document.getElementById('modal-kategori-title').innerText = `Edit ${jenis}`;
+    document.getElementById('modal-kategori-label').innerText = `Nama ${jenis}`;
+    document.getElementById('modal-kategori-input').value = nama;
+    document.getElementById('modal-kategori').classList.remove('hidden');
+    document.getElementById('modal-kategori-input').focus();
+    document.getElementById('modal-kategori-input').select();
+}
+
+// Simpan dari modal (tambah atau edit)
+async function simpanKategoriModal() {
+    const id = document.getElementById('modal-kategori-id').value;
+    const jenis = document.getElementById('modal-kategori-jenis').value;
+    const nama = document.getElementById('modal-kategori-input').value.trim();
+    if(!nama) { alert('Nama tidak boleh kosong!'); return; }
+
     showLoading();
-    // 1. Update master table
-    await supabaseClient.from('kategori_db').update({ nama: newName.trim() }).eq('id', id);
-    
-    // 2. Update massal di resep (Dynamic Column Update)
-    const fieldTarget = jenis === 'Kategori' ? 'kategori' : 'sub_kategori';
-    let updatePayload = {}; updatePayload[fieldTarget] = newName.trim();
-    await supabaseClient.from('resep').update(updatePayload).eq(fieldTarget, oldName);
-
-    await loadKategoriDB(); 
+    if(id) {
+        // Edit
+        const oldName = listKategori.concat(listSubKategori).find(k => k.id == id)?.nama || '';
+        await supabaseClient.from('kategori_db').update({ nama }).eq('id', id);
+        const fieldTarget = jenis === 'Kategori' ? 'kategori' : 'sub_kategori';
+        let updatePayload = {}; updatePayload[fieldTarget] = nama;
+        await supabaseClient.from('resep').update(updatePayload).eq(fieldTarget, oldName);
+    } else {
+        // Tambah
+        await supabaseClient.from('kategori_db').insert([{ jenis, nama }]);
+    }
+    await loadKategoriDB();
     if(document.getElementById('tab-direktori').classList.contains('active')) loadDirektori();
-    hideLoading(); alert(`Nama berhasil diubah! Semua menu dengan ${jenis} tersebut sudah disinkronisasi.`);
+    hideLoading();
+    closeModal('modal-kategori');
+    alert(`${id ? 'Perubahan' : 'Penambahan'} berhasil!`);
 }
 
 async function hapusKategoriManajemen(id, nama) {
@@ -144,14 +166,12 @@ async function hapusKategoriManajemen(id, nama) {
     }
 }
 
-// ================= FITUR SINKRONISASI KATEGORI DARI RESEP =================
+// ================= SINKRONISASI KATEGORI =================
 async function sinkronisasiKategoriDariResep() {
     showLoading();
-    // Ambil semua resep
     const { data: resepList, error } = await supabaseClient.from('resep').select('kategori, sub_kategori');
     if (error) { hideLoading(); alert('Gagal mengambil data resep'); return; }
 
-    // Kumpulkan nilai unik
     const kategoriSet = new Set();
     const subSet = new Set();
     resepList.forEach(r => {
@@ -159,12 +179,10 @@ async function sinkronisasiKategoriDariResep() {
         if (r.sub_kategori) subSet.add(r.sub_kategori.trim());
     });
 
-    // Ambil master yang sudah ada
     const { data: existing } = await supabaseClient.from('kategori_db').select('nama, jenis');
     const existingMap = {};
     existing.forEach(e => existingMap[e.jenis + '|' + e.nama] = true);
 
-    // Siapkan data baru
     const inserts = [];
     kategoriSet.forEach(nama => {
         if (!existingMap['Kategori|' + nama]) inserts.push({ jenis: 'Kategori', nama });
@@ -179,15 +197,14 @@ async function sinkronisasiKategoriDariResep() {
         return;
     }
 
-    // Simpan ke database
     const { error: insertError } = await supabaseClient.from('kategori_db').insert(inserts);
     hideLoading();
     if (insertError) {
         alert('Gagal menyinkronkan: ' + insertError.message);
     } else {
         alert(`${inserts.length} kategori/sub-kategori berhasil diimpor dari resep!`);
-        await loadKategoriDB(); // refresh
-        loadDirektori(); // refresh tampilan
+        await loadKategoriDB();
+        loadDirektori();
     }
 }
 
@@ -344,7 +361,6 @@ async function bukaModalEditResep(menuObj) {
     document.getElementById('edit-r-pilih-bb').value = ''; document.getElementById('edit-r-bb-selected-id').value = ''; document.getElementById('edit-r-qty-bb').value = '';
     document.getElementById('edit-r-id').value = menuObj.id; document.getElementById('edit-r-nama').value = menuObj.nama; 
     
-    // Pilih Kategori dan Sub di Dropdown
     document.getElementById('edit-r-kategori').value = menuObj.kategori;
     document.getElementById('edit-r-sub').value = menuObj.sub_kategori;
     
@@ -365,7 +381,7 @@ async function simpanEditResep() {
     hideLoading(); closeModal('modal-edit-resep'); loadDirektori();
 }
 
-// ================= IMPORT EXCEL LOGIC (YIELD UPDATED) =================
+// ================= IMPORT EXCEL LOGIC =================
 function initiateImport(event, type) { fileImportTertunda = event.target.files[0]; if(!fileImportTertunda) return; jenisImportTertunda = type; document.getElementById('modal-import-option').classList.remove('hidden'); }
 function batalImport() { fileImportTertunda = null; jenisImportTertunda = ''; document.getElementById('import-bb-file').value = ''; document.getElementById('import-resep-file').value = ''; closeModal('modal-import-option'); }
 function jalankanImport(mode) { closeModal('modal-import-option'); showLoading(); if(jenisImportTertunda === 'bb') eksekusiImportBahanBaku(mode); else eksekusiImportResep(mode); }
@@ -428,7 +444,6 @@ function eksekusiImportResep(mode) {
 window.onload = async () => { 
     await inisialisasiAuth(); 
     await loadKategoriDB(); 
-    // Jika master kosong, otomatis sinkronisasi dari resep
     if (listKategori.length === 0 && listSubKategori.length === 0) {
         await sinkronisasiKategoriDariResep();
     }
