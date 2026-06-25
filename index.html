@@ -12,7 +12,6 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
 
-    <!-- Navbar -->
     <nav class="bg-white/80 backdrop-blur-lg shadow-sm p-4 sticky top-0 z-40 border-b border-gray-200 transition-all">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
@@ -41,7 +40,6 @@
         </div>
     </nav>
 
-    <!-- Mobile Menu -->
     <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity opacity-0 duration-300"></div>
     <div id="mobile-menu" class="fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-[60] transform translate-x-full transition-transform duration-300 ease-out flex flex-col">
         <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -64,10 +62,8 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="max-w-7xl mx-auto mt-4 p-4">
 
-        <!-- TAB 1: DIREKTORI RESEP -->
         <div id="tab-direktori" class="tab-content active">
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-row items-center gap-2 mb-6">
                 <div class="relative flex-1">
@@ -86,7 +82,6 @@
             <div id="recipe-wrapper" class="space-y-12"></div>
         </div>
 
-        <!-- TAB 2: BAHAN BAKU -->
         <div id="tab-bahan-baku" class="tab-content admin-only hidden">
             <h2 class="text-2xl font-black mb-6 text-gray-800">Database Bahan Baku</h2>
             <div class="admin-only hidden bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-2xl shadow-sm mb-6 flex flex-wrap gap-4 items-center justify-between border border-green-100 relative overflow-hidden">
@@ -136,24 +131,17 @@
             </div>
         </div>
 
-        <!-- TAB KATEGORI -->
         <div id="tab-kategori" class="tab-content admin-only hidden">
             <h2 class="text-2xl font-black text-gray-800 mb-2">Manajemen Kategori DB</h2>
-            <p class="text-sm text-gray-500 mb-4">Pembaruan nama pada halaman ini akan merubah seluruh data resep yang terkait secara otomatis.</p>
+            <p class="text-sm text-gray-500 mb-8">Pembaruan nama pada halaman ini akan merubah seluruh data resep yang terkait secara otomatis.</p>
             
-            <div class="flex justify-end mb-4">
-                <button onclick="sinkronisasiKategoriDariResep()" class="bg-green-100 text-green-700 border border-green-300 px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-200 transition-colors flex items-center gap-2">
-                    <span>🔄</span> Sinkronisasi dari Resep
-                </button>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                     <div class="flex justify-between items-center mb-4 border-b pb-3">
                         <h3 class="font-bold text-lg text-blue-800 flex items-center gap-2"><span>📂</span> Master Kategori</h3>
-                        <button onclick="bukaModalTambahKategori('Kategori')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-200 transition-colors">+ Tambah Baru</button>
+                        <button onclick="tambahKategoriManajemen('Kategori')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-200 transition-colors">+ Tambah Baru</button>
                     </div>
-                    <div class="overflow-y-auto max-h-96 custom-scrollbar flex-grow pr-2">
+                    <div class="overflow-y-auto max-h-[500px] custom-scrollbar flex-grow pr-2">
                         <ul id="list-manajemen-kategori" class="space-y-2"></ul>
                     </div>
                 </div>
@@ -161,16 +149,15 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                     <div class="flex justify-between items-center mb-4 border-b pb-3">
                         <h3 class="font-bold text-lg text-indigo-800 flex items-center gap-2"><span>🏷️</span> Master Sub-Kategori</h3>
-                        <button onclick="bukaModalTambahKategori('Sub-Kategori')" class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-200 transition-colors">+ Tambah Baru</button>
+                        <button onclick="tambahKategoriManajemen('Sub-Kategori')" class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-200 transition-colors">+ Tambah Baru</button>
                     </div>
-                    <div class="overflow-y-auto max-h-96 custom-scrollbar flex-grow pr-2">
+                    <div class="overflow-y-auto max-h-[500px] custom-scrollbar flex-grow pr-2">
                         <ul id="list-manajemen-sub-kategori" class="space-y-2"></ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: INPUT RESEP BARU -->
         <div id="tab-input-hpp" class="tab-content admin-only hidden">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div><h2 class="text-2xl font-black text-gray-800">Kalkulator Resep Baru</h2><p class="text-sm text-gray-500 mt-1">Buat resep satuan atau import massal.</p></div>
@@ -191,14 +178,14 @@
                                 <label class="block text-sm font-bold text-gray-600 mb-1.5">Kategori</label>
                                 <div class="flex gap-1">
                                     <select id="r-kategori" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-white text-sm"></select>
-                                    <button onclick="bukaModalTambahKategori('Kategori')" class="bg-gray-100 border border-gray-300 text-gray-600 px-3 rounded-lg hover:bg-gray-200 font-bold">+</button>
+                                    <button onclick="tambahKategoriManajemen('Kategori')" class="bg-gray-100 border border-gray-300 text-gray-600 px-3 rounded-lg hover:bg-gray-200 font-bold shadow-sm transition-colors">+</button>
                                 </div>
                             </div>
                             <div class="w-1/2">
                                 <label class="block text-sm font-bold text-gray-600 mb-1.5">Sub-Kategori</label>
                                 <div class="flex gap-1">
                                     <select id="r-sub" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-white text-sm"></select>
-                                    <button onclick="bukaModalTambahKategori('Sub-Kategori')" class="bg-gray-100 border border-gray-300 text-gray-600 px-3 rounded-lg hover:bg-gray-200 font-bold">+</button>
+                                    <button onclick="tambahKategoriManajemen('Sub-Kategori')" class="bg-gray-100 border border-gray-300 text-gray-600 px-3 rounded-lg hover:bg-gray-200 font-bold shadow-sm transition-colors">+</button>
                                 </div>
                             </div>
                         </div>
@@ -231,7 +218,6 @@
             </div>
         </div>
 
-        <!-- TAB 4: SETTINGS -->
         <div id="tab-settings" class="tab-content admin-only hidden">
             <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
                 <h2 class="text-2xl font-black text-gray-800 mb-2 border-b pb-4">⚙️ Pengaturan Aplikasi</h2>
@@ -261,28 +247,20 @@
         </div>
     </div>
 
-    <!-- MODALS -->
-
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="hidden fixed inset-0 bg-gray-900/80 z-[80] flex items-center justify-center backdrop-blur-sm transition-opacity">
         <div class="text-center bg-white/10 p-8 rounded-2xl border border-white/20 shadow-2xl"><div class="loader"></div><h3 class="text-white text-xl font-extrabold mb-1 tracking-wide">MEMPROSES DATA</h3><p class="text-blue-200 text-sm">Harap tunggu sebentar...</p></div>
     </div>
-
-    <!-- Summary Modal -->
+    
     <div id="modal-summary" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative modal-enter text-center"><div id="summary-icon" class="text-6xl mb-4 transform scale-110">✅</div><h3 id="summary-title" class="text-2xl font-black mb-1 text-gray-800">Selesai!</h3><p id="summary-message" class="text-sm text-gray-500 mb-6 pb-6 border-b border-gray-100">Rekapitulasi proses data Anda:</p><div class="flex justify-between gap-4 mb-6"><div class="bg-green-50 px-4 py-4 rounded-xl border border-green-200 w-1/2 shadow-inner"><span class="block text-xs font-bold text-green-700 mb-1 uppercase tracking-wider">Berhasil</span><span id="summary-success" class="text-3xl font-black text-green-600">0</span></div><div class="bg-red-50 px-4 py-4 rounded-xl border border-red-200 w-1/2 shadow-inner"><span class="block text-xs font-bold text-red-700 mb-1 uppercase tracking-wider">Gagal</span><span id="summary-fail" class="text-3xl font-black text-red-600">0</span></div></div><button onclick="closeModal('modal-summary')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-gray-900 shadow-md transition-colors">Tutup Jendela</button></div>
     </div>
-
-    <!-- Login Modal -->
+    
     <div id="modal-login" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 relative modal-enter text-center border border-gray-100"><button onclick="closeModal('modal-login')" class="absolute top-4 right-4 text-gray-300 hover:text-red-500 font-bold text-xl transition-colors">✕</button><div class="bg-blue-50 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 border border-blue-100"><span class="text-3xl">🔐</span></div><h3 class="text-2xl font-black mb-1 text-gray-800">Admin Access</h3><p class="text-xs text-gray-500 mb-6">Silakan login untuk kontrol manajerial.</p><div class="space-y-4 text-left"><div><label class="block text-sm font-bold text-gray-600 mb-1.5 ml-1">Email / Username</label><input type="email" id="login-email" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" /></div><div><label class="block text-sm font-bold text-gray-600 mb-1.5 ml-1">Password</label><input type="password" id="login-password" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" /></div></div><button id="btn-submit-login" onclick="loginAdmin()" class="mt-8 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-bold text-lg hover:shadow-lg hover:-translate-y-0.5 transition-all">Autentikasi</button></div></div>
-
-    <!-- Import Option Modal -->
+    
     <div id="modal-import-option" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative modal-enter text-center"><button onclick="batalImport()" class="absolute top-4 right-4 text-gray-300 hover:text-red-500 font-bold text-xl">✕</button><div class="text-5xl mb-4">⚙️</div><h3 class="text-2xl font-black mb-2 text-gray-800">Sistem Import</h3><p class="text-sm text-gray-500 mb-8">Pilih metode integrasi data Excel ke dalam database.</p><div class="space-y-3"><button onclick="jalankanImport('modify')" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl font-bold hover:shadow-lg transition-transform hover:-translate-y-0.5 flex flex-col items-center border border-blue-600"><span>🔄 Smart Update (Aman)</span><span class="text-xs font-normal opacity-80 mt-1">Perbarui data yang sudah ada & tambah data baru.</span></button><button onclick="jalankanImport('replace')" class="w-full bg-white text-red-600 border-2 border-red-100 p-4 rounded-xl font-bold hover:bg-red-50 transition-colors flex flex-col items-center"><span>⚠️ Replace Total (Bahaya)</span><span class="text-xs font-normal opacity-80 mt-1">Hapus seluruh database lama, timpa 100% dengan Excel.</span></button></div></div></div>
-
-    <!-- Edit Bahan Baku Modal -->
+    
     <div id="modal-edit-bb" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 md:p-8 relative modal-enter"><button onclick="closeModal('modal-edit-bb')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">✕</button><h3 class="text-2xl font-black mb-6 text-gray-800 border-b pb-3">Edit Bahan Baku</h3><input type="hidden" id="edit-bb-id" /><div class="space-y-4"><div><label class="block text-sm font-bold text-gray-600 mb-1">Nama Bahan</label><input type="text" id="edit-bb-nama" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50 focus:bg-white" /></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-bold text-gray-600 mb-1">Satuan Beli</label><input type="text" id="edit-bb-satuan-beli" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50 focus:bg-white" /></div><div><label class="block text-sm font-bold text-gray-600 mb-1">Harga Beli</label><div class="flex shadow-sm rounded-lg"><span class="inline-flex items-center px-3 text-sm text-gray-600 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg font-bold">Rp</span><input type="text" id="edit-bb-harga-beli" class="flex-1 w-full p-2.5 border border-gray-300 rounded-r-lg text-sm outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 focus:bg-white" oninput="formatRupiahInput(this); kalkulasiHargaSatuBB('edit')" /></div></div><div><label class="block text-sm font-bold text-gray-600 mb-1">Nilai Konversi</label><input type="number" id="edit-bb-konversi" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50 focus:bg-white" oninput="kalkulasiHargaSatuBB('edit')" /></div><div><label class="block text-sm font-bold text-gray-600 mb-1">Satuan Resep</label><input type="text" id="edit-bb-satuan-resep" class="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50 focus:bg-white" oninput="kalkulasiHargaSatuBB('edit')" /></div></div></div><div class="mt-6 bg-blue-50 p-4 rounded-xl flex justify-between items-center border border-blue-100"><div class="text-sm text-blue-800 font-medium">Harga Baru Resep: <span id="edit-bb-harga-final" class="font-black text-xl ml-2 text-blue-600">Rp 0 / -</span></div></div><div class="mt-8 flex justify-end gap-3"><button onclick="closeModal('modal-edit-bb')" class="text-gray-500 px-5 py-2.5 rounded-lg font-bold hover:bg-gray-100 transition-colors">Batal</button><button onclick="simpanEditBahanBaku()" class="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition-transform hover:-translate-y-0.5">Simpan Perubahan</button></div></div></div>
     
-    <!-- Edit Resep Modal -->
     <div id="modal-edit-resep" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-2 md:p-4 backdrop-blur-sm"><div class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto p-4 md:p-6 relative modal-enter custom-scrollbar"><button onclick="closeModal('modal-edit-resep')" class="absolute top-4 right-4 bg-white rounded-full p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 shadow-sm font-bold text-xl z-10 transition-all">✕</button><h3 class="text-2xl font-black mb-6 text-gray-800 border-b border-gray-200 pb-3">Edit Resep Card</h3><input type="hidden" id="edit-r-id" /><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100"><h4 class="font-bold text-blue-700 mb-4 flex items-center gap-2"><span class="bg-blue-100 p-1 rounded">📝</span> Informasi Dasar</h4><div class="space-y-4">
         <div><label class="block text-sm font-bold text-gray-600 mb-1">Nama Menu</label><input type="text" id="edit-r-nama" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" /></div>
         <div class="flex gap-3">
@@ -301,22 +279,27 @@
         </div>
     </div></div><div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 overflow-visible flex flex-col"><h4 class="font-bold text-green-700 mb-4 flex items-center gap-2"><span class="bg-green-100 p-1 rounded">🧪</span> Modifikasi Komposisi</h4><div class="flex gap-2 mb-4 relative bb-autocomplete z-20"><div class="relative w-full flex-1"><input type="hidden" id="edit-r-bb-selected-id" /><input type="hidden" id="edit-r-bb-selected-nama" /><input type="hidden" id="edit-r-bb-selected-harga" /><input type="hidden" id="edit-r-bb-selected-satuan" /><input type="text" id="edit-r-pilih-bb" placeholder="Cari bahan..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-300 outline-none" onfocus="bukaDropdownBB('edit')" oninput="filterDropdownBB('edit')" autocomplete="off" /><ul id="edit-r-dropdown-list" class="absolute left-0 right-0 z-50 w-full bg-white border border-gray-200 rounded shadow-xl max-h-40 overflow-y-auto hidden mt-1 custom-scrollbar"></ul></div><input type="number" id="edit-r-qty-bb" placeholder="Qty" class="w-20 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-400 text-center outline-none" /><button onclick="addTempKomposisi('edit')" class="bg-green-600 text-white px-3 rounded-lg hover:bg-green-700 font-bold transition-transform hover:scale-105">+</button></div><div class="border border-gray-200 rounded-lg overflow-y-auto max-h-36 custom-scrollbar mb-4"><table class="w-full text-left text-sm whitespace-nowrap"><thead class="bg-gray-50 sticky top-0"><tr class="border-b text-gray-500"><th class="p-2">Bahan</th><th class="p-2 text-center">Qty</th><th class="p-2 text-right">Subtotal</th><th class="p-2 text-center">✕</th></tr></thead><tbody id="edit-temp-komposisi-list" class="divide-y divide-gray-100"></tbody></table></div><div class="bg-gray-800 text-white p-4 rounded-xl text-sm space-y-1 mt-auto"><div class="flex justify-between">HPP / Porsi: <span id="edit-r-total-cost" class="font-bold text-white">Rp 0</span></div><div class="flex justify-between border-t border-gray-600 pt-1 mt-1">Margin: <span id="edit-r-margin" class="font-bold text-emerald-400">Rp 0</span></div><div class="flex justify-between">% HPP: <span id="edit-r-persentase" class="font-black text-emerald-400">0%</span></div></div></div></div><div class="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-5"><button onclick="closeModal('modal-edit-resep')" class="text-gray-500 bg-white border border-gray-300 px-6 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm">Batalkan</button><button onclick="simpanEditResep()" class="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition-transform hover:-translate-y-0.5">Simpan & Perbarui Menu</button></div></div></div>
 
-    <!-- MODAL KATEGORI (Tambah/Edit) -->
-    <div id="modal-kategori" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative modal-enter">
-            <button onclick="closeModal('modal-kategori')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl transition-colors">✕</button>
-            <h3 id="modal-kategori-title" class="text-2xl font-black mb-4 text-gray-800 border-b pb-3">Tambah Kategori</h3>
-            <input type="hidden" id="modal-kategori-id" />
-            <input type="hidden" id="modal-kategori-jenis" />
-            <div class="space-y-4">
+    <div id="modal-assign-menu" class="hidden fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-50 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative modal-enter overflow-hidden">
+            <div class="bg-white p-6 border-b border-gray-100 flex justify-between items-center z-10 shadow-sm">
                 <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1.5" id="modal-kategori-label">Nama Kategori</label>
-                    <input type="text" id="modal-kategori-input" placeholder="Masukkan nama..." class="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all" />
+                    <h3 class="text-xl font-black text-gray-800" id="assign-modal-title">Tambah Menu</h3>
+                    <p class="text-sm text-gray-500 mt-1" id="assign-modal-subtitle">Pilih menu yang akan dipindahkan.</p>
                 </div>
+                <button onclick="closeModal('modal-assign-menu')" class="text-gray-400 hover:text-red-500 font-bold text-2xl transition-colors leading-none">✕</button>
             </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="closeModal('modal-kategori')" class="text-gray-500 px-5 py-2.5 rounded-lg font-bold hover:bg-gray-100 transition-colors">Batal</button>
-                <button onclick="simpanKategoriModal()" class="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition-transform hover:-translate-y-0.5">Simpan</button>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                <input type="hidden" id="assign-target-nama" />
+                <input type="hidden" id="assign-target-jenis" />
+                <div class="mb-4 relative">
+                    <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+                    <input type="text" id="search-assign-menu" placeholder="Cari nama menu..." class="pl-9 pr-3 py-2.5 border border-gray-300 rounded-xl text-sm w-full focus:ring-2 focus:ring-blue-400 outline-none shadow-sm" oninput="filterAssignMenu()" />
+                </div>
+                <div id="assign-menu-list" class="space-y-2"></div>
+            </div>
+            <div class="p-5 bg-white border-t border-gray-200 flex justify-end gap-3 z-10">
+                <button onclick="closeModal('modal-assign-menu')" class="text-gray-600 bg-gray-100 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-colors">Batal</button>
+                <button onclick="simpanAssignMenu()" class="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md transition-transform hover:-translate-y-0.5">Simpan Perubahan</button>
             </div>
         </div>
     </div>
