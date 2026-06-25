@@ -890,7 +890,7 @@ function renderCatalogDirektori() {
     renderAuthUI();
 }
 
-// ==================== SUMMARY HPP (DENGAN CHECKBOX & AKSI DINAMIS) ====================
+// ==================== SUMMARY HPP (DENGAN CHECKBOX & AKSI DINAMIS) ======================
 function renderTableSummary() {
     const tbody = document.getElementById('table-summary-body');
     if (!tbody) return;
