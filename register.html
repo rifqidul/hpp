@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daftar — HPP Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#f5f3ef;--panel:#fff;--ink:#18201c;--muted:#72756f;--line:#e2dfd7;--accent:#1f6b4f;--accent-soft:#e4f0e8;--danger:#b54b45}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.page{min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(460px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 14px 40px rgba(20,30,25,.06)}.brand{font-size:24px;font-weight:800;letter-spacing:-.04em}.brand small{display:block;font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0;margin-top:3px}.title{margin:28px 0 6px;font-size:24px;letter-spacing:-.03em}.subtitle{margin:0 0 20px;color:var(--muted)}.field{display:grid;gap:7px;margin-top:14px}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;outline:none}.field input:focus{border-color:#86b19b;box-shadow:0 0 0 3px var(--accent-soft)}.btn{width:100%;border:1px solid var(--accent);background:var(--accent);color:#fff;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:20px}.btn:disabled{opacity:.6;cursor:wait}.secondary{margin-top:10px;border-color:var(--line);background:#fff;color:var(--ink)}.notice{display:none;margin-top:14px;padding:12px;border-radius:10px}.notice.ok{display:block;background:var(--accent-soft);color:#315841;border:1px solid #cfe2d6}.notice.err{display:block;background:#fff1f0;color:var(--danger);border:1px solid #efcfcb}.foot{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}.foot a{color:var(--accent);font-weight:700;text-decoration:none}.small{font-size:11px;color:var(--muted);margin-top:9px}
+</style>
+</head>
+<body>
+<div class="page"><main class="card">
+  <div class="brand">HPP Studio<small>Food Cost Management</small></div>
+  <h1 class="title">Buat akun baru</h1>
+  <p class="subtitle">Buat akun untuk mengakses HPP Studio dan membuat workspace usaha Anda.</p>
+
+  <form id="registerForm">
+    <div class="field"><label for="name">Nama</label><input id="name" autocomplete="name" placeholder="Nama Anda"></div>
+    <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="nama@email.com" required></div>
+    <div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" required><div class="small">Gunakan password panjang yang unik dan simpan di password manager.</div></div>
+    <div class="field"><label for="confirm">Konfirmasi Password</label><input id="confirm" type="password" autocomplete="new-password" placeholder="Ulangi password" required></div>
+    <button class="btn" id="submitBtn" type="submit">Buat Akun</button>
+  </form>
+  <div id="notice" class="notice"></div>
+  <button class="btn secondary" type="button" onclick="location.href='index.html'">Kembali ke Login</button>
+  <div class="foot">Sudah punya akun? <a href="index.html">Masuk di sini</a></div>
+</main></div>
+<script>
+const SUPABASE_URL='https://zcctezdfuyyhgjeajlpr.supabase.co';
+const SUPABASE_KEY='sb_publishable_dgjPe3SZd1dgktnAXUxMEg_ITl9TihV';
+const client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const form=document.getElementById('registerForm');
+const submitBtn=document.getElementById('submitBtn');
+const notice=document.getElementById('notice');
+function showNotice(message,type){notice.textContent=message;notice.className='notice '+type}
+form.addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const name=document.getElementById('name').value.trim();
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  const confirm=document.getElementById('confirm').value;
+  if(password.length<8)return showNotice('Password minimal 8 karakter.','err');
+  if(password!==confirm)return showNotice('Konfirmasi password tidak sama.','err');
+  submitBtn.disabled=true;submitBtn.textContent='Membuat akun...';notice.className='notice';
+  try{
+    const {data,error}=await client.auth.signUp({email,password,options:{data:{full_name:name}}});
+    if(error)throw error;
+    if(data.session){
+      showNotice('Akun berhasil dibuat. Mengarahkan ke aplikasi...','ok');
+      setTimeout(()=>location.href='index.html',700);
+    }else{
+      showNotice('Akun berhasil dibuat. Silakan cek email Anda untuk verifikasi, lalu kembali ke halaman login.','ok');
+      form.reset();
+    }
+  }catch(err){showNotice(err?.message||'Gagal membuat akun.','err')}
+  finally{submitBtn.disabled=false;submitBtn.textContent='Buat Akun'}
+});
+</script>
+</body>
+</html>
