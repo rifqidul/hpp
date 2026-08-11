@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Setup Admin — HPP Studio</title>
+<style>
+:root{--bg:#f5f3ef;--panel:#fff;--ink:#18201c;--muted:#72756f;--line:#e2dfd7;--accent:#1f6b4f;--soft:#e4f0e8;--danger:#b54b45}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.page{min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(480px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 14px 40px rgba(20,30,25,.06)}.brand{font-size:24px;font-weight:800;letter-spacing:-.04em}.brand small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0}.title{margin:26px 0 6px;font-size:24px}.subtitle{margin:0 0 20px;color:var(--muted)}.field{display:grid;gap:7px;margin-top:14px}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;outline:none}.field input:focus{border-color:#86b19b;box-shadow:0 0 0 3px var(--soft)}.btn{width:100%;padding:12px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:20px}.primary{border:1px solid var(--accent);background:var(--accent);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink);margin-top:10px}.btn:disabled{opacity:.6;cursor:wait}.notice{display:none;margin-top:14px;padding:12px;border-radius:10px}.ok{display:block;background:var(--soft);color:#315841;border:1px solid #cfe2d6}.err{display:block;background:#fff1f0;color:var(--danger);border:1px solid #efcfcb}.small{margin-top:9px;color:var(--muted);font-size:11px}.warning{margin-top:18px;padding:12px;border-radius:10px;background:#fff8e8;border:1px solid #ead9ae;color:#6f5725;font-size:12px}.foot{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}.foot a{color:var(--accent);font-weight:700;text-decoration:none}
+</style></head>
+<body><div class="page"><main class="card">
+<div class="brand">HPP Studio<small>Food Cost Management</small></div>
+<h1 class="title">One-Time Admin Setup</h1>
+<p class="subtitle">Gunakan halaman ini hanya untuk membuat atau memperbaiki akun Owner pertama. Setelah berhasil, kode setup menjadi tidak berlaku.</p>
+<form id="form">
+<div class="field"><label>Nama Owner</label><input id="name" autocomplete="name" placeholder="Rifqi Abdul Hafid"></div>
+<div class="field"><label>Email Admin</label><input id="email" type="email" value="rifqidul@gmail.com" autocomplete="email" required></div>
+<div class="field"><label>Password Baru</label><input id="password" type="password" autocomplete="new-password" placeholder="Minimal 12 karakter" required><div class="small">Password ini akan menjadi password login akun Owner.</div></div>
+<div class="field"><label>Konfirmasi Password</label><input id="confirm" type="password" autocomplete="new-password" required></div>
+<div class="field"><label>Kode Setup</label><input id="setupCode" type="password" autocomplete="off" placeholder="Masukkan kode setup"></div>
+<button id="submit" class="btn primary" type="submit">Buat / Reset Owner</button>
+</form>
+<div id="notice" class="notice"></div>
+<div class="warning">Kode setup hanya berlaku satu kali. Jangan membagikannya kepada orang lain. Password tidak dikirim ke chat atau disimpan oleh halaman ini.</div>
+<button class="btn secondary" type="button" onclick="location.href='index.html'">Kembali ke Login</button>
+<div class="foot">Setelah berhasil, login melalui <a href="index.html">HPP Studio</a>.</div>
+</main></div>
+<script>
+const ENDPOINT='https://zcctezdfuyyhgjeajlpr.supabase.co/functions/v1/setup-admin';
+const form=document.getElementById('form'),button=document.getElementById('submit'),notice=document.getElementById('notice');
+function msg(t,c){notice.textContent=t;notice.className='notice '+c}
+form.addEventListener('submit',async e=>{e.preventDefault();const name=document.getElementById('name').value.trim();const email=document.getElementById('email').value.trim();const password=document.getElementById('password').value;const confirm=document.getElementById('confirm').value;const setupCode=document.getElementById('setupCode').value;if(email.toLowerCase()!=='rifqidul@gmail.com')return msg('Email admin harus rifqidul@gmail.com.','err');if(password.length<12)return msg('Password minimal 12 karakter.','err');if(password!==confirm)return msg('Konfirmasi password tidak sama.','err');if(!setupCode)return msg('Kode setup wajib diisi.','err');button.disabled=true;button.textContent='Menyiapkan Owner...';notice.className='notice';try{const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password,setupCode})});const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||'Gagal membuat Owner.');msg('Owner berhasil dibuat / diperbaiki. Password baru sudah aktif. Silakan login.','ok');document.getElementById('setupCode').value='';setTimeout(()=>location.href='index.html',1800)}catch(err){msg(err.message||'Gagal terhubung ke server setup.','err')}finally{button.disabled=false;button.textContent='Buat / Reset Owner'}});
+</script></body></html>
